@@ -15,9 +15,10 @@ that tab or pane. Simple but complete, in the way of micro and nano:
   double click selects a word, the wheel scrolls; a click on a tab shows it.
 - **The Amiga clipboard**, shared with every Workbench program; pasting
   through CTerm (its Amiga+V) works too, as pasted text (no indenting).
-- **Colours for code**: C, 68k assembly, ARexx, Amiga E, AmigaGuide,
-  AmigaDOS scripts (S:Startup-Sequence...), Python, Markdown, shell
-  scripts, Makefiles, JSON, HTML/XML, Lua.
+- **Colours for code**: C, 68k assembly, ARexx, Amiga E, Blitz Basic 2
+  and AmiBlitz, Installer scripts, AmigaGuide, AmigaDOS scripts
+  (S:Startup-Sequence...), Python, Markdown, shell scripts, Makefiles,
+  JSON, HTML/XML, Lua.
 - **Several files in tabs.**
 - **Files kept as they are**: Latin-1 or UTF-8 (found by looking), LF or
   CR LF line ends, the last new line or not; saving goes to a new copy
@@ -90,7 +91,7 @@ there as well.
 
 `save [NAME]`, `open [NAME]`, `insert [NAME]`, `goto N[:C]`, `run COMMAND`
 (an AmigaDOS command in the terminal), `count`, `lang NAME` (text, C, asm,
-rexx, e, guide, script, py, md, sh, make, json, html, lua), `quit`, and
+rexx, e, bb, install, guide, script, py, md, sh, make, json, html, lua), `quit`, and
 `set`:
 
 | Setting | |
@@ -112,6 +113,20 @@ rexx, e, guide, script, py, md, sh, make, json, html, lua), `quit`, and
 Settings are kept in `ENVARC:Sumi/Sumi.prefs`; where each file was left in
 `ENVARC:Sumi/Sumi.places`. Regular expressions: `.` `*` `+` `?` `[a-z]`
 `[^...]` `^` `$` `\d` `\w` `\s` `\b`, one line at a time.
+
+## Blitz Basic and Installer scripts
+
+Blitz Basic 2 / AmiBlitz files (`.bb`, `.bb2`, `.ab2`, `.ab3`) must be
+saved as text (ASCII) from the Blitz editor; its own tokenized files are
+not text. Coloured: the language's words (If, While, Statement, NEWTYPE...),
+compiler directives (WBStartup, INCLUDE, CNIF...), `#constants` and
+`!macros`, `.labels`, types (`.w` `.l` `.q` `.f` `.s` `.b`, NEWTYPEs),
+`$hex` and `%binary`, `;` comments.
+
+Installer scripts are known by a name starting with `Install` (no
+ending), `.install`/`.installer`, or by their first line being an
+Installer call such as `(set` or `(welcome`. Coloured: the function after
+each `(`, `@variables`, strings with their `\n` escapes, `;` comments.
 
 ## Inside other terminals
 

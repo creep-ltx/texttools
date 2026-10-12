@@ -8,7 +8,7 @@
 
 const char *const langnames[L_COUNT] = {
     "text", "C", "68k asm", "ARexx", "Amiga E", "AmigaGuide", "AmigaDOS", "Python", "Markdown",
-    "shell", "Makefile", "JSON", "HTML/XML", "Lua"
+    "shell", "Makefile", "JSON", "HTML/XML", "Lua", "Blitz", "Installer"
 };
 
 /* states between lines */
@@ -69,6 +69,29 @@ static const char *const kw_sh[] = {
 static const char *const kw_lua[] = {
     "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if",
     "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while", NULL
+};
+/* Blitz Basic 2 and AmiBlitz: the language's own words (the thousands
+ * of library commands stay plain) */
+static const char *const kw_blitz[] = {
+    "if", "then", "else", "elseif", "endif", "end", "while", "wend", "repeat", "until",
+    "forever", "for", "to", "step", "next", "select", "case", "default", "goto", "gosub",
+    "return", "pop", "statement", "function", "shared", "dim", "list", "newtype", "deftype",
+    "usepath", "let", "and", "or", "not", "xor", "mod", "data", "read", "restore", "on",
+    "maxlen", "exit", "macro", "blitz", "amiga", "qamiga", "setint", "clrint", "seterr",
+    "clrerr", "errfail", "runerrson", "runerrsoff", "fast", "true", "false", "null",
+    "include", "xinclude", "incbin", "incdir", NULL
+};
+static const char *const pp_blitz[] = {   /* compiler directives */
+    "include", "xinclude", "incbin", "incdir", "cnif", "csif", "celse", "cend", "wbstartup",
+    "nocli", "optimize", "syntax", "closeed", "noliblines", "useasm", "runerrson",
+    "runerrsoff", NULL
+};
+/* the Installer's usual first words: how a script without a name is known */
+static const char *const fn_install[] = {
+    "set", "welcome", "if", "procedure", "message", "complete", "copyfiles", "copylib",
+    "makedir", "askdir", "user", "transcript", "onerror", "trap", "startup", "working",
+    "debug", "makeassign", "exit", "run", "execute", "select", "while", "until", "abort",
+    "askchoice", "askbool", "askoptions", "textfile", "tooltype", "delete", "rename", NULL
 };
 static const char *const kw_json[] = { "true", "false", "null", NULL };
 static const char *const kw_asm[] = {
@@ -133,6 +156,9 @@ int syn_guess(const char *path, Buf *b)
     if (!strcmp(ext, "html") || !strcmp(ext, "htm") || !strcmp(ext, "xml") || !strcmp(ext, "svg"))
         return L_HTML;
     if (!strcmp(ext, "lua")) return L_LUA;
+    if (!strcmp(ext, "bb") || !strcmp(ext, "bb2") || !strcmp(ext, "ab2") || !strcmp(ext, "ab3") ||
+        !strcmp(ext, "abs") || !strcmp(ext, "bba")) return L_BLITZ;
+    if (!strcmp(ext, "install") || !strcmp(ext, "installer")) return L_INSTALL;
     {   /* S: scripts have no ending */
         char low[40];
         for (i = 0; i < 39 && n[i]; i++) low[i] = (char)lower((unsigned char)n[i]);
@@ -142,6 +168,22 @@ int syn_guess(const char *path, Buf *b)
         if (!strcmp(low, "makefile") || !strcmp(low, "gnumakefile") || !strncmp(low, "makefile.", 9))
             return L_MAKE;
         if (!strncmp(path, "S:", 2) || !strncmp(path, "s:", 2)) return L_SCRIPT;
+        if (!strncmp(low, "install", 7) && !e) return L_INSTALL;
+    }
+    if (b) {    /* an Installer script: lines that start with ( */
+        long k, lim = b->n < 40 ? b->n : 40;
+        for (k = 0; k < lim; k++) {
+            const char *s = b->l[k].s;
+            long j = 0, n2 = b->l[k].len;
+            while (j < n2 && (s[j] == ' ' || s[j] == '\t')) j++;
+            if (j >= n2 || s[j] == ';') continue;
+            if (s[j] == '(') {
+                long e = ++j;
+                while (e < n2 && (isid((unsigned char)s[e]) || s[e] == '-')) e++;
+                if (inlist(fn_install, s + j, e - j, 1)) return L_INSTALL;
+            }
+            break;
+        }
     }
     if (b && b->n > 0 && b->l[0].len >= 2) {
         const char *s = b->l[0].s;
@@ -275,6 +317,109 @@ int syn_line(int lang, const char *s, long len, int st, UBYTE *col)
                 paint(col, i, e, HL_PREPROC);
                 i = e - 1;
             }
+        }
+        return ST_NONE;
+    }
+    if (lang == L_BLITZ) {
+        long j = 0;
+        while (j < len && (s[j] == ' ' || s[j] == '\t')) j++;
+        if (j + 1 < len && s[j] == '.' && isid((unsigned char)s[j + 1])) {  /* .label */
+            long e = j + 1;
+            while (e < len && isid((unsigned char)s[e])) e++;
+            paint(col, j, e, HL_LABEL);
+            i = e;
+        }
+        while (i < len) {
+            unsigned char c = (unsigned char)s[i];
+            if (c == ';') {
+                paint(col, i, len, HL_COMMENT);
+                break;
+            }
+            if (c == '"') {
+                long e = quoted(s, i, len, '"', 0);
+                paint(col, i, e, HL_STRING);
+                i = e;
+                continue;
+            }
+            if ((c == '#' || c == '!') && i + 1 < len && isid((unsigned char)s[i + 1])) {
+                long e = i + 1;      /* #constant, !macro */
+                while (e < len && isid((unsigned char)s[e])) e++;
+                paint(col, i, e, HL_PREPROC);
+                i = e;
+                continue;
+            }
+            if ((c >= '0' && c <= '9') || ((c == '$' || c == '%') && i + 1 < len &&
+                isid((unsigned char)s[i + 1]))) {
+                if (i == 0 || !isid((unsigned char)s[i - 1])) {
+                    long e = number(s, i, len);
+                    paint(col, i, e, HL_NUMBER);
+                    i = e;
+                    continue;
+                }
+            }
+            if (c == '.' && i + 1 < len && isid((unsigned char)s[i + 1])) {
+                long e = i + 1;      /* a type: .w .l .q .f .s .b, or a NEWTYPE's */
+                while (e < len && isid((unsigned char)s[e])) e++;
+                paint(col, i, e, HL_TYPE);
+                i = e;
+                continue;
+            }
+            if (isid(c)) {
+                long e = i;
+                while (e < len && isid((unsigned char)s[e])) e++;
+                if (inlist(pp_blitz, s + i, e - i, 1)) paint(col, i, e, HL_PREPROC);
+                else if (inlist(kw_blitz, s + i, e - i, 1)) paint(col, i, e, HL_KEYWORD);
+                if (e < len && s[e] == '$') e++;    /* a$: a string variable */
+                i = e;
+                continue;
+            }
+            i++;
+        }
+        return ST_NONE;
+    }
+    if (lang == L_INSTALL) {
+        /* the Installer's Lisp: (function args...), ; comments, @variables */
+        while (i < len) {
+            unsigned char c = (unsigned char)s[i];
+            if (c == ';') {
+                paint(col, i, len, HL_COMMENT);
+                break;
+            }
+            if (c == '"' || c == '\'') {
+                long e = quoted(s, i, len, (char)c, 1);
+                paint(col, i, e, HL_STRING);
+                i = e;
+                continue;
+            }
+            if (c == '(') {
+                long e = i + 1;
+                while (e < len && (s[e] == ' ' || s[e] == '\t')) e++;
+                i = e;
+                while (e < len && s[e] != ' ' && s[e] != '\t' && s[e] != '(' && s[e] != ')' &&
+                       s[e] != '"' && s[e] != ';') e++;
+                paint(col, i, e, HL_KEYWORD);
+                i = e;
+                continue;
+            }
+            if (c == '@') {
+                long e = i + 1;
+                while (e < len && (isid((unsigned char)s[e]) || s[e] == '-')) e++;
+                paint(col, i, e, HL_PREPROC);
+                i = e;
+                continue;
+            }
+            if (((c >= '0' && c <= '9') || c == '$' || c == '%') &&
+                (i == 0 || !isid((unsigned char)s[i - 1]))) {
+                long e = number(s, i, len);
+                paint(col, i, e, HL_NUMBER);
+                i = e;
+                continue;
+            }
+            if (isid(c)) {
+                while (i < len && (isid((unsigned char)s[i]) || s[i] == '-')) i++;
+                continue;
+            }
+            i++;
         }
         return ST_NONE;
     }

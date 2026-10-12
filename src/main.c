@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "sumi.h"
 
-static const char version[] = "$VER: Sumi 0.2b1 (12.10.2026) - text editor";
+static const char version[] = "$VER: Sumi 0.2b2 (12.10.2026) - text editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Sumi/Sumi.prefs"
@@ -1983,6 +1983,8 @@ static void command(void)
                 (i == L_ASM && !nocase(a, "asm", -1)) ||
                 (i == L_E && !nocase(a, "e", -1)) ||
                 (i == L_SCRIPT && !nocase(a, "script", -1)) ||
+                (i == L_BLITZ && (!nocase(a, "bb", -1) || !nocase(a, "amiblitz", -1))) ||
+                (i == L_INSTALL && !nocase(a, "install", -1)) ||
                 (i == L_GUIDE && !nocase(a, "guide", -1)) ||
                 (i == L_REXX && !nocase(a, "rexx", -1)) ||
                 (i == L_PY && !nocase(a, "py", -1)) ||
@@ -2286,7 +2288,7 @@ static const char *cprefix(int lang, const char **suf)
     *suf = NULL;
     switch (lang) {
     case L_C: return "//";
-    case L_ASM: case L_SCRIPT: return ";";
+    case L_ASM: case L_SCRIPT: case L_BLITZ: case L_INSTALL: return ";";
     case L_REXX: *suf = "*/"; return "/*";
     case L_E: return "->";
     case L_PY: case L_SH: case L_MAKE: return "#";

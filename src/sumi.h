@@ -84,7 +84,7 @@ const char *basename_(const char *p);
 
 /* ---- syntax.c ------------------------------------------------------- */
 enum { L_NONE, L_C, L_ASM, L_REXX, L_E, L_GUIDE, L_SCRIPT, L_PY, L_MD, L_SH, L_MAKE, L_JSON,
-       L_HTML, L_LUA, L_COUNT };
+       L_HTML, L_LUA, L_BLITZ, L_INSTALL, L_COUNT };
 /* what a byte is, for its colour */
 enum { HL_TEXT, HL_COMMENT, HL_STRING, HL_KEYWORD, HL_TYPE, HL_NUMBER, HL_PREPROC, HL_LABEL };
 extern const char *const langnames[L_COUNT];
