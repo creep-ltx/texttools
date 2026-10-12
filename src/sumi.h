@@ -5,6 +5,7 @@
 #define SUMI_H
 
 #include <exec/types.h>
+#include <dos/dos.h>
 #include "tui.h"
 
 #define PATHMAX 256
@@ -15,6 +16,7 @@ typedef struct {
     char *s;
     long len, cap;
     UBYTE hs;                   /* the highlighter's state where it starts */
+    UBYTE own;                  /* s is its own (else it is in the loaded file's block) */
 } Line;
 
 typedef struct {
@@ -44,6 +46,7 @@ typedef struct Buf {
     int sel;                    /* a selection from anchor to cur */
     long wantx;                 /* the column up/down keep to */
     long top, left;             /* the view */
+    long topseg;                /* soft wrap: the first shown row of line top */
     Undo *undo, *redo;
     long group, saved;          /* the undo serial the file on disk matches */
     long hsok;                  /* highlight states known for lines < hsok */
@@ -51,6 +54,8 @@ typedef struct Buf {
     ULONG prot;                 /* the file's protection bits, kept on save */
     char comment[80];           /* and its comment */
     int hadfile;                /* it exists on disk */
+    char *bulk;                 /* the file as loaded: unchanged lines point into it */
+    struct DateStamp disk;      /* the file's date when loaded or saved */
 } Buf;
 
 Buf *buf_new(void);
@@ -69,6 +74,7 @@ long buf_xof(Buf *b, long line, long col);               /* the screen column of
 long buf_colat(Buf *b, long line, long x);               /* the byte at a screen column */
 int pos_cmp(Pos a, Pos b);
 void buf_clearundo(Buf *b);
+int buf_load(Buf *b, char *text, long n);                /* text (AllocVec'd) becomes the lines */
 
 /* ---- file.c --------------------------------------------------------- */
 int file_load(Buf *b, const char *path);    /* 1 ok, 0 missing (a new file), -1 error */
@@ -77,7 +83,8 @@ const char *file_err(void);
 const char *basename_(const char *p);
 
 /* ---- syntax.c ------------------------------------------------------- */
-enum { L_NONE, L_C, L_ASM, L_REXX, L_E, L_GUIDE, L_SCRIPT, L_PY, L_MD, L_COUNT };
+enum { L_NONE, L_C, L_ASM, L_REXX, L_E, L_GUIDE, L_SCRIPT, L_PY, L_MD, L_SH, L_MAKE, L_JSON,
+       L_HTML, L_LUA, L_COUNT };
 /* what a byte is, for its colour */
 enum { HL_TEXT, HL_COMMENT, HL_STRING, HL_KEYWORD, HL_TYPE, HL_NUMBER, HL_PREPROC, HL_LABEL };
 extern const char *const langnames[L_COUNT];
@@ -90,6 +97,8 @@ int syn_line(int lang, const char *s, long len, int state, UBYTE *col);
 void clip_put(const char *t, long n, int enc);
 char *clip_get(long *n, int enc);           /* AllocVec'd, in enc, '\n' lines */
 void clip_exit(void);
+char *clip_mine(const char *t, long n, int enc, long *out);
+char *convert_text(const char *t, long n, int from, int to, long *out);
 
 /* ---- keys.c --------------------------------------------------------- */
 enum {
@@ -103,6 +112,8 @@ enum {
     A_SAVE, A_SAVEAS, A_OPEN, A_NEWTAB, A_CLOSE, A_NEXTTAB, A_PREVTAB, A_QUIT,
     A_FIND, A_FINDNEXT, A_FINDPREV, A_REPLACE, A_GOTO, A_HELP, A_COMMAND,
     A_NUMBERS, A_ESCAPE,
+    A_MATCH, A_COMMENT, A_JUSTIFY, A_SOFTWRAP, A_MOVEUP, A_MOVEDOWN, A_INSERT,
+    A_MACROREC, A_MACROPLAY, A_WHITESPACE,
     A_COUNT
 };
 extern const char *const actnames[A_COUNT];
@@ -114,7 +125,7 @@ void keyname(int key, char *dst, int shortform);
 extern char keysbad[120];
 
 /* ---- main.c --------------------------------------------------------- */
-extern int tabsize, tabspaces, numbers, autoindent;
+extern int tabsize, tabspaces, numbers, autoindent, backups;
 void say(const char *msg, int err);
 void prefs_save(void);
 

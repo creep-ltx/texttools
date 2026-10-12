@@ -179,6 +179,22 @@ static int looksutf8(const UBYTE *t, long n)
     return high;
 }
 
+/* a paste through the terminal that is what Sumi last put on the
+ * clipboard: the exact copy (the clipboard has only Latin-1) */
+char *clip_mine(const char *t, long n, int enc, long *out)
+{
+    long i, j;
+    if (!mine) return NULL;
+    /* the terminal sends new lines as CRs */
+    if (n != minelatlen) return NULL;
+    for (i = 0, j = 0; i < n; i++, j++) {
+        char a = t[i], c = minelat[j];
+        if (a == '\r') a = '\n';
+        if (a != c) return NULL;
+    }
+    return convert_text(mine, minelen, mineenc, enc, out);
+}
+
 char *clip_get(long *n, int enc)
 {
     UBYTE head[12], *data = NULL, scratch[64];

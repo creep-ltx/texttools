@@ -58,6 +58,7 @@ int tui_open(void);             /* raw mode, own screen, size; FALSE: no termina
 void tui_close(void);           /* everything back as it was */
 void tui_suspend(void);         /* the terminal to a command for a while ... */
 void tui_resume(void);          /* ... and back (all drawn again on the next flush) */
+void tui_keyafter(void);        /* (suspended) a key read before going back */
 
 /* drawing into the grid (nothing is sent until tui_flush) */
 void tui_put(int col, int row, const char *s, int len, int fg, int bg, int attr);

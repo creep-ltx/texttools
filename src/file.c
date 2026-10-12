@@ -88,6 +88,7 @@ int file_load(Buf *b, const char *path)
     }
     size = fib->fib_Size;
     b->prot = fib->fib_Protection;
+    b->disk = fib->fib_Date;
     strncpy(b->comment, (char *)fib->fib_Comment, sizeof(b->comment) - 1);
     b->comment[sizeof(b->comment) - 1] = 0;
     FreeDosObject(DOS_FIB, fib);
@@ -126,11 +127,12 @@ int file_load(Buf *b, const char *path)
         size = o;
     }
     if (b->finalnl && size > 0) size--;     /* the last line's new line is implied */
-    {
-        Pos z = { 0, 0 };
-        buf_insert(b, z, t + start, size);
+    (void)start;
+    if (!buf_load(b, t, size)) {
+        FreeVec(t);
+        strcpy(errbuf, "not enough memory for it");
+        return -1;
     }
-    FreeVec(t);
     buf_clearundo(b);
     b->cur.line = b->cur.col = 0;
     b->hsok = 0;
@@ -209,7 +211,16 @@ int file_save(Buf *b, const char *path)
             DeleteFile((STRPTR)tmp);
             return 0;
         }
-        DeleteFile((STRPTR)old);
+        if (backups) {
+            /* the old version kept beside it as NAME.bak (the last one) */
+            char bak[PATHMAX + 8];
+            strncpy(bak, path, PATHMAX - 1);
+            bak[PATHMAX - 1] = 0;
+            strcat(bak, ".bak");
+            DeleteFile((STRPTR)bak);
+            if (!Rename((STRPTR)old, (STRPTR)bak)) DeleteFile((STRPTR)old);
+        } else
+            DeleteFile((STRPTR)old);
         SetProtection((STRPTR)path, b->prot);
         if (b->comment[0]) SetComment((STRPTR)path, (STRPTR)b->comment);
     }

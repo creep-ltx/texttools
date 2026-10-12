@@ -16,12 +16,27 @@ that tab or pane. Simple but complete, in the way of micro and nano:
 - **The Amiga clipboard**, shared with every Workbench program; pasting
   through CTerm (its Amiga+V) works too, as pasted text (no indenting).
 - **Colours for code**: C, 68k assembly, ARexx, Amiga E, AmigaGuide,
-  AmigaDOS scripts (S:Startup-Sequence...), Python, Markdown.
+  AmigaDOS scripts (S:Startup-Sequence...), Python, Markdown, shell
+  scripts, Makefiles, JSON, HTML/XML, Lua.
 - **Several files in tabs.**
 - **Files kept as they are**: Latin-1 or UTF-8 (found by looking), LF or
   CR LF line ends, the last new line or not; saving goes to a new copy
   first and keeps the file's protection bits and comment.
-- Line numbers, auto-indent, tabs or spaces, undo for everything.
+- **Finding**: plain or **regular expressions**, smart case (a capital
+  makes it exact), every match on screen marked, find and replace with a
+  question for each (or all), a history of what was sought (Up/Down).
+- **Soft wrap** (long lines folded on screen, the cursor moving by screen
+  rows) and **Justify** (a paragraph reflowed to a width, as nano's).
+- **For code**: the matching bracket shown and jumped to, lines commented
+  on and off in the file's own way, lines moved up and down, auto-indent,
+  tabs or spaces, closing brackets and quotes typed for you (optional).
+- **Macros**: keys recorded and played back.
+- **Remembers** where you were in each file; warns before writing over a
+  file that changed on disk since it was read; keeps a NAME.bak if asked.
+- `run` an AmigaDOS command right in the terminal (its output stays until a
+  key), `insert` a file, `count` lines, words and characters.
+- Line numbers, tabs and trailing spaces shown if wanted, undo for
+  everything.
 
 ## Usage
 
@@ -44,14 +59,22 @@ sumi [+LINE] [FILE ...]
 | Ctrl+K, Ctrl+D, Ctrl+A | cut the line (again: they gather), duplicate, select all |
 | Tab, Shift+Tab | indent, unindent (the selected lines too) |
 | Ctrl+F, F3 / Ctrl+G, Shift+F3 | find, find the next, the previous |
-| Ctrl+R, Ctrl+L | replace, go to a line |
+| Ctrl+R, Ctrl+L | replace, go to a line (LINE or LINE:COLUMN) |
+| F5 | to the matching bracket |
+| F6 | comment the line (or the selected lines) on / off |
+| Ctrl+Alt+Up/Down | move the line (or the selected lines) up / down |
+| F7 | Justify: the paragraph reflowed to the wrap column (72) |
+| F8 | soft wrap on / off |
+| Shift+F4 | show tabs and trailing spaces on / off |
+| Shift+F2 | insert a file at the cursor |
+| Shift+F5, Shift+F6 | record keys (again: stop), play them |
 | Ctrl+Left/Right | the line's start (twice: the very start) / end |
 | Alt+Left/Right | a word back / on |
 | Alt+Up/Down, Ctrl+P/N | a page up / down |
 | Ctrl+Up/Down | the file's start / end |
 | Shift + any of those | select |
 | F1, Help | the help: every key as bound now |
-| Ctrl+U | a command: `save NAME`, `open NAME`, `goto N`, `set tabsize N`, `set tabs spaces`, `set numbers off`, `set autoindent off`, `set encoding utf8`, `set lineends crlf`, `lang asm`, `quit` |
+| Ctrl+U | a command (below) |
 | F4 | line numbers on/off |
 
 Why these: in a terminal the **Right Amiga** keys are CTerm's menus and
@@ -63,10 +86,32 @@ work - CTerm (0.3b29 and later) sends those combinations to Sumi; a plain
 console window sends them as plain arrows, so Ctrl+P/N, Ctrl+B/E are
 there as well.
 
-## Settings
+## Commands (Ctrl+U)
 
-`ENVARC:Sumi/Sumi.prefs` (set from the command line, Ctrl+U `set ...`):
-`tabsize`, `tabspaces`, `numbers`, `autoindent`.
+`save [NAME]`, `open [NAME]`, `insert [NAME]`, `goto N[:C]`, `run COMMAND`
+(an AmigaDOS command in the terminal), `count`, `lang NAME` (text, C, asm,
+rexx, e, guide, script, py, md, sh, make, json, html, lua), `quit`, and
+`set`:
+
+| Setting | |
+|---|---|
+| `set tabsize N` | 1-16 (8) |
+| `set tabs spaces` / `tabs` | what Tab puts in |
+| `set numbers on/off` | line numbers |
+| `set autoindent on/off` | a new line indented as the one before |
+| `set wrap on/off` | soft wrap |
+| `set wrapcol N` | Justify's width (72) |
+| `set autoclose on/off` | brackets and quotes closed as you type them |
+| `set whitespace on/off` | tabs and trailing spaces shown |
+| `set regex on/off` | finding with regular expressions |
+| `set case smart/exact/any` | finding's case |
+| `set backup on/off` | the old version kept as NAME.bak on saving |
+| `set encoding utf8/latin1` | this file's characters, converted |
+| `set lineends lf/crlf` | this file's line ends |
+
+Settings are kept in `ENVARC:Sumi/Sumi.prefs`; where each file was left in
+`ENVARC:Sumi/Sumi.places`. Regular expressions: `.` `*` `+` `?` `[a-z]`
+`[^...]` `^` `$` `\d` `\w` `\s` `\b`, one line at a time.
 
 ## Inside other terminals
 

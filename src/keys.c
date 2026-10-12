@@ -30,7 +30,9 @@ const char *const actnames[A_COUNT] = {
     "tab", "untab", "cut", "copy", "paste", "cutline", "duplicate", "undo", "redo",
     "save", "saveas", "open", "newtab", "close", "nexttab", "prevtab", "quit",
     "find", "findnext", "findprev", "replace", "goto", "help", "command",
-    "numbers", "escape"
+    "numbers", "escape",
+    "match", "comment", "justify", "softwrap", "moveup", "movedown", "insert",
+    "macrorecord", "macroplay", "whitespace"
 };
 
 const char *const actdesc[A_COUNT] = {
@@ -50,7 +52,10 @@ const char *const actdesc[A_COUNT] = {
     "the next tab", "the previous tab", "quit (asks for what is not saved)",
     "find", "find the next", "find the previous", "find and replace", "go to a line",
     "help: these keys", "a command (save, open, goto, set...)", "line numbers on/off",
-    "end the selection / the question"
+    "end the selection / the question",
+    "to the matching bracket", "comment the line(s) on/off", "reflow the paragraph",
+    "soft wrap on/off", "move the line(s) up", "move the line(s) down", "insert a file here",
+    "record keys (again: stop)", "play the recorded keys", "show tabs and trailing spaces"
 };
 
 /* the defaults, as the file says them */
@@ -81,7 +86,10 @@ static const char defaults[] =
     "<S-C-Right> sellineend\n<S-A-Up> selpageup\n<S-A-Down> selpagedown\n"
     "<S-C-Up> selfilestart\n<S-C-Down> selfileend\n<S-Home> sellinestart\n<S-End> sellineend\n"
     "\n; the rest\n"
-    "<Help> help\n<F1> help\n<C-u> command\n<F4> numbers\n<Esc> escape\n";
+    "<Help> help\n<F1> help\n<C-u> command\n<F4> numbers\n<Esc> escape\n"
+    "<F5> match\n<F6> comment\n<F7> justify\n<F8> softwrap\n<C-A-Up> moveup\n"
+    "<C-A-Down> movedown\n<S-F2> insert\n<S-F5> macrorecord\n<S-F6> macroplay\n"
+    "<S-F4> whitespace\n";
 
 typedef struct { int key, act; } Bind;
 static Bind binds[MAXB];
@@ -205,7 +213,6 @@ static void addbind(int key, int act)
 static void parse(char *text)
 {
     char *line = text;
-    nbinds = 0;
     while (line && *line) {
         char *nl = strchr(line, '\n'), *k, *a, *e;
         int key, act;
@@ -264,8 +271,17 @@ static void writeto(const char *dir, const char *path)
 
 void keys_load(void)
 {
-    char *t = readall(KEYENV);
+    char *t, *d;
     keysbad[0] = 0;
+    nbinds = 0;
+    /* the defaults first, the person's file over them: a key Sumi gains in
+     * a new version is there without editing the file, and the file wins */
+    if ((d = AllocVec(sizeof(defaults), MEMF_ANY)) != NULL) {
+        memcpy(d, defaults, sizeof(defaults));
+        parse(d);
+        FreeVec(d);
+    }
+    t = readall(KEYENV);
     if (!t) t = readall(KEYFILE);
     if (!t) {
         /* first start: the defaults, written for the person to change */

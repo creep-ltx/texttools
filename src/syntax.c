@@ -7,13 +7,16 @@
 #include "sumi.h"
 
 const char *const langnames[L_COUNT] = {
-    "text", "C", "68k asm", "ARexx", "Amiga E", "AmigaGuide", "AmigaDOS", "Python", "Markdown"
+    "text", "C", "68k asm", "ARexx", "Amiga E", "AmigaGuide", "AmigaDOS", "Python", "Markdown",
+    "shell", "Makefile", "JSON", "HTML/XML", "Lua"
 };
 
 /* states between lines */
 #define ST_NONE  0
 #define ST_BLOCK 1              /* inside a block comment */
 #define ST_LONG  2              /* inside a Python long string */
+#define ST_HTMLC 3              /* inside an HTML comment */
+#define ST_LUAC  4              /* inside a Lua block comment */
 
 static const char *const kw_c[] = {
     "if", "else", "for", "while", "do", "switch", "case", "default", "break", "continue",
@@ -58,6 +61,16 @@ static const char *const kw_py[] = {
     "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with",
     "yield", "None", "True", "False", "self", NULL
 };
+static const char *const kw_sh[] = {
+    "if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac",
+    "in", "function", "return", "exit", "break", "continue", "local", "export", "readonly",
+    "echo", "cd", "set", "unset", "shift", "source", "test", "true", "false", "eval", "exec", NULL
+};
+static const char *const kw_lua[] = {
+    "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if",
+    "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while", NULL
+};
+static const char *const kw_json[] = { "true", "false", "null", NULL };
 static const char *const kw_asm[] = {
     "section", "code", "data", "bss", "dc", "ds", "dcb", "include", "incbin", "incdir",
     "macro", "endm", "equ", "set", "xdef", "xref", "even", "cnop", "rept", "endr", "if",
@@ -113,13 +126,21 @@ int syn_guess(const char *path, Buf *b)
     if (!strcmp(ext, "guide")) return L_GUIDE;
     if (!strcmp(ext, "py")) return L_PY;
     if (!strcmp(ext, "md") || !strcmp(ext, "markdown")) return L_MD;
-    if (!strcmp(ext, "script") || !strcmp(ext, "sh")) return L_SCRIPT;
+    if (!strcmp(ext, "script")) return L_SCRIPT;
+    if (!strcmp(ext, "sh") || !strcmp(ext, "bash") || !strcmp(ext, "zsh")) return L_SH;
+    if (!strcmp(ext, "mk") || !strcmp(ext, "mak")) return L_MAKE;
+    if (!strcmp(ext, "json")) return L_JSON;
+    if (!strcmp(ext, "html") || !strcmp(ext, "htm") || !strcmp(ext, "xml") || !strcmp(ext, "svg"))
+        return L_HTML;
+    if (!strcmp(ext, "lua")) return L_LUA;
     {   /* S: scripts have no ending */
         char low[40];
         for (i = 0; i < 39 && n[i]; i++) low[i] = (char)lower((unsigned char)n[i]);
         low[i] = 0;
         if (strstr(low, "startup") || !strcmp(low, "shell-startup") || !strcmp(low, "user-startup"))
             return L_SCRIPT;
+        if (!strcmp(low, "makefile") || !strcmp(low, "gnumakefile") || !strncmp(low, "makefile.", 9))
+            return L_MAKE;
         if (!strncmp(path, "S:", 2) || !strncmp(path, "s:", 2)) return L_SCRIPT;
     }
     if (b && b->n > 0 && b->l[0].len >= 2) {
@@ -127,7 +148,14 @@ int syn_guess(const char *path, Buf *b)
         if (s[0] == '/' && s[1] == '*') return L_REXX;      /* ARexx starts with a comment */
         if (b->l[0].len >= 5 && !strncmp(s, "@data", 5)) return L_GUIDE;
         if (b->l[0].len >= 9 && !strncmp(s, "@database", 9)) return L_GUIDE;
-        if (s[0] == '#' && s[1] == '!') return L_PY;
+        if (s[0] == '#' && s[1] == '!') {
+            long k;
+            for (k = 2; k + 2 < b->l[0].len; k++)
+                if (!strncmp(s + k, "sh", 2)) return L_SH;
+            return L_PY;
+        }
+        if (s[0] == '<' && (s[1] == '?' || s[1] == '!' || s[1] == 'h' || s[1] == 'H')) return L_HTML;
+        if (s[0] == '{' || s[0] == '[') return L_JSON;
     }
     return L_NONE;
 }
@@ -249,6 +277,187 @@ int syn_line(int lang, const char *s, long len, int st, UBYTE *col)
             }
         }
         return ST_NONE;
+    }
+    if (lang == L_HTML) {
+        while (i < len) {
+            if (st == ST_HTMLC) {
+                long j = i;
+                while (j + 2 < len && strncmp(s + j, "-->", 3)) j++;
+                if (j + 2 < len) {
+                    paint(col, i, j + 3, HL_COMMENT);
+                    i = j + 3;
+                    st = ST_NONE;
+                } else {
+                    paint(col, i, len, HL_COMMENT);
+                    return ST_HTMLC;
+                }
+                continue;
+            }
+            if (i + 3 < len && !strncmp(s + i, "<!--", 4)) {
+                st = ST_HTMLC;
+                continue;
+            }
+            if (s[i] == '<') {                  /* a tag: its name, its attributes' values */
+                long j = i + 1;
+                while (j < len && s[j] != '>') {
+                    if (s[j] == '"' || s[j] == '\'') {
+                        long e = quoted(s, j, len, s[j], 0);
+                        paint(col, j, e, HL_STRING);
+                        j = e;
+                        continue;
+                    }
+                    col[j] = HL_KEYWORD;
+                    j++;
+                }
+                col[i] = HL_KEYWORD;
+                if (j < len) col[j++] = HL_KEYWORD;
+                i = j;
+                continue;
+            }
+            if (s[i] == '&') {                  /* an entity */
+                long j = i;
+                while (j < len && s[j] != ';' && s[j] != ' ') j++;
+                paint(col, i, j < len ? j + 1 : len, HL_NUMBER);
+                i = j;
+            }
+            i++;
+        }
+        return st;
+    }
+    if (lang == L_MAKE) {
+        long j;
+        if (len && s[0] == '\t') {             /* a recipe line: the shell's */
+            for (i = 0; i < len; i++)
+                if (s[i] == '$' && i + 1 < len && (s[i + 1] == '(' || s[i + 1] == '{')) {
+                    long e = i;
+                    while (e < len && s[e] != ')' && s[e] != '}') e++;
+                    paint(col, i, e < len ? e + 1 : len, HL_PREPROC);
+                    i = e;
+                } else if (s[i] == '#') {
+                    paint(col, i, len, HL_COMMENT);
+                    break;
+                }
+            return ST_NONE;
+        }
+        for (j = 0; j < len && s[j] != ':' && s[j] != '=' && s[j] != '#'; j++) ;
+        if (j < len && s[j] == ':' && (j + 1 >= len || s[j + 1] != '=')) paint(col, 0, j + 1, HL_LABEL);
+        else if (j < len && s[j] == '=') paint(col, 0, j, HL_TYPE);
+        for (i = 0; i < len; i++)
+            if (s[i] == '#') {
+                paint(col, i, len, HL_COMMENT);
+                break;
+            } else if (s[i] == '$' && i + 1 < len && (s[i + 1] == '(' || s[i + 1] == '{')) {
+                long e = i;
+                while (e < len && s[e] != ')' && s[e] != '}') e++;
+                paint(col, i, e < len ? e + 1 : len, HL_PREPROC);
+                i = e;
+            } else if (len >= 6 && i == 0 && (!strncmp(s, "ifeq", 4) || !strncmp(s, "ifneq", 5) ||
+                       !strncmp(s, "ifdef", 5) || !strncmp(s, "endif", 5) || !strncmp(s, "else", 4) ||
+                       !strncmp(s, "include", 7) || !strncmp(s, "define", 6))) {
+                long e = 0;
+                while (e < len && s[e] != ' ') e++;
+                paint(col, 0, e, HL_KEYWORD);
+                i = e;
+            }
+        return ST_NONE;
+    }
+    if (lang == L_JSON) {
+        for (i = 0; i < len; i++) {
+            if (s[i] == '"') {
+                long e = quoted(s, i, len, '"', 1), k = e;
+                while (k < len && (s[k] == ' ' || s[k] == '\t')) k++;
+                paint(col, i, e, k < len && s[k] == ':' ? HL_TYPE : HL_STRING);
+                i = e - 1;
+            } else if ((s[i] >= '0' && s[i] <= '9') || s[i] == '-') {
+                long e = i + 1;
+                while (e < len && ((s[e] >= '0' && s[e] <= '9') || s[e] == '.' || s[e] == 'e' ||
+                                   s[e] == 'E' || s[e] == '+' || s[e] == '-')) e++;
+                paint(col, i, e, HL_NUMBER);
+                i = e - 1;
+            } else if (isid((unsigned char)s[i])) {
+                long e = i;
+                while (e < len && isid((unsigned char)s[e])) e++;
+                if (inlist(kw_json, s + i, e - i, 0)) paint(col, i, e, HL_KEYWORD);
+                i = e - 1;
+            }
+        }
+        return ST_NONE;
+    }
+    if (lang == L_SH) {
+        for (i = 0; i < len; i++) {
+            if (s[i] == '#' && (i == 0 || s[i - 1] == ' ' || s[i - 1] == '\t')) {
+                paint(col, i, len, HL_COMMENT);
+                break;
+            }
+            if (s[i] == '"' || s[i] == '\'') {
+                long e = quoted(s, i, len, s[i], s[i] == '"');
+                paint(col, i, e, HL_STRING);
+                i = e - 1;
+            } else if (s[i] == '$') {
+                long e = i + 1;
+                if (e < len && (s[e] == '{' || s[e] == '(')) {
+                    while (e < len && s[e] != '}' && s[e] != ')') e++;
+                    if (e < len) e++;
+                } else
+                    while (e < len && (isid((unsigned char)s[e]) || s[e] == '?' || s[e] == '@')) e++;
+                paint(col, i, e, HL_PREPROC);
+                i = e - 1;
+            } else if (isid((unsigned char)s[i]) && (i == 0 || !isid((unsigned char)s[i - 1]))) {
+                long e = i;
+                while (e < len && (isid((unsigned char)s[e]) || s[e] == '-')) e++;
+                if (inlist(kw_sh, s + i, e - i, 0)) paint(col, i, e, HL_KEYWORD);
+                i = e - 1;
+            }
+        }
+        return ST_NONE;
+    }
+    if (lang == L_LUA) {
+        while (i < len) {
+            if (st == ST_LUAC) {
+                long j = i;
+                while (j + 1 < len && !(s[j] == ']' && s[j + 1] == ']')) j++;
+                if (j + 1 < len) {
+                    paint(col, i, j + 2, HL_COMMENT);
+                    i = j + 2;
+                    st = ST_NONE;
+                } else {
+                    paint(col, i, len, HL_COMMENT);
+                    return ST_LUAC;
+                }
+                continue;
+            }
+            if (i + 1 < len && s[i] == '-' && s[i + 1] == '-') {
+                if (i + 3 < len && s[i + 2] == '[' && s[i + 3] == '[') {
+                    st = ST_LUAC;
+                    paint(col, i, i + 4, HL_COMMENT);
+                    i += 4;
+                    continue;
+                }
+                paint(col, i, len, HL_COMMENT);
+                return st;
+            }
+            if (s[i] == '"' || s[i] == '\'') {
+                long e = quoted(s, i, len, s[i], 1);
+                paint(col, i, e, HL_STRING);
+                i = e;
+                continue;
+            }
+            if (s[i] >= '0' && s[i] <= '9' && (i == 0 || !isid((unsigned char)s[i - 1]))) {
+                long e = number(s, i, len);
+                paint(col, i, e, HL_NUMBER);
+                i = e;
+                continue;
+            }
+            if (isid((unsigned char)s[i])) {
+                long e = i;
+                while (e < len && isid((unsigned char)s[e])) e++;
+                if (inlist(kw_lua, s + i, e - i, 0)) paint(col, i, e, HL_KEYWORD);
+                i = e;
+                continue;
+            }
+            i++;
+        }
+        return st;
     }
     /* C, ARexx, E, Python: the general kind */
     if (lang == L_C) {

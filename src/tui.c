@@ -870,6 +870,20 @@ void tui_suspend(void)
     SetMode(tin, 0);
 }
 
+/* after a command in the terminal: its output stays until a key */
+void tui_keyafter(void)
+{
+    static const char m[] = "\n\x1b[7m Sumi: a key goes back \x1b[0m";
+    char c;
+    if (!topen) return;
+    Write(tout, (APTR)m, sizeof(m) - 1);
+    SetMode(tin, 1);
+    Read(tin, &c, 1);
+    while (WaitForChar(tin, 20000)) Read(tin, &c, 1);
+    Write(tout, "\r\x1b[K", 4);
+    SetMode(tin, 0);
+}
+
 void tui_resume(void)
 {
     if (!topen) return;

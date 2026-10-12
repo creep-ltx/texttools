@@ -30,10 +30,11 @@ static int line_room(Line *l, long need)
     if (!(p = AllocVec(cap, MEMF_ANY))) return 0;
     if (l->s) {
         CopyMem(l->s, p, l->len);
-        FreeVec(l->s);
+        if (l->own) FreeVec(l->s);
     }
     l->s = p;
     l->cap = cap;
+    l->own = 1;
     return 1;
 }
 
@@ -77,7 +78,7 @@ static void lines_close(Buf *b, long i, long k)
 {
     long j;
     for (j = i; j < i + k; j++)
-        if (b->l[j].s) FreeVec(b->l[j].s);
+        if (b->l[j].s && b->l[j].own) FreeVec(b->l[j].s);
     memmove(&b->l[i], &b->l[i + k], (b->n - i - k) * sizeof(Line));
     b->n -= k;
 }
@@ -120,10 +121,41 @@ void buf_free(Buf *b)
     long i;
     if (!b) return;
     for (i = 0; i < b->n; i++)
-        if (b->l[i].s) FreeVec(b->l[i].s);
+        if (b->l[i].s && b->l[i].own) FreeVec(b->l[i].s);
     if (b->l) FreeVec(b->l);
+    if (b->bulk) FreeVec(b->bulk);
     buf_clearundo(b);
     FreeVec(b);
+}
+
+/* A loaded file's text as the lines, in one go: they point into the
+ * block (one allocation, not one a line - a big file loads in a moment)
+ * and get their own memory only when they change. No undo for it. */
+int buf_load(Buf *b, char *text, long n)
+{
+    long lines = 1, i, k = 0, start = 0;
+    Line *l;
+    for (i = 0; i < n; i++)
+        if (text[i] == '\n') lines++;
+    if (!(l = AllocVec(lines * sizeof(Line) + 64 * sizeof(Line), MEMF_ANY | MEMF_CLEAR))) return 0;
+    for (i = 0; i <= n; i++)
+        if (i == n || text[i] == '\n') {
+            l[k].s = text + start;
+            l[k].len = l[k].cap = i - start;
+            l[k].own = 0;
+            k++;
+            start = i + 1;
+        }
+    for (i = 0; i < b->n; i++)
+        if (b->l[i].s && b->l[i].own) FreeVec(b->l[i].s);
+    if (b->l) FreeVec(b->l);
+    if (b->bulk) FreeVec(b->bulk);
+    b->l = l;
+    b->n = k;
+    b->cap = lines + 64;
+    b->bulk = text;
+    b->hsok = 0;
+    return 1;
 }
 
 int buf_dirty(Buf *b)
