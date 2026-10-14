@@ -31,6 +31,19 @@ view); tested in a 640x256 Topaz 8 window on the A1200.
 - ideas: `.man` pages (CUtils' format, MAN:english/...: the CUtils session offered it),
   footnotes, a dim front-matter block is there but untested, mouse selection in the view.
 
+## Others on Aminet (checked 2026-10-14)
+
+Aminet's search for "markdown" finds three:
+- **Kickdown 1.0** (text/edit, 2026-10-03, André Gewert): OS 3.2, 68k, a ReAction window with the
+  editor and an HTML preview side by side (html.gadget, md4c), plus `mdtohtml` for the Shell.
+  The nearest one to this program: a GUI program, not a terminal one; needs html.gadget and AISS.
+- **Earmark 1.1** (text/edit, 2021): AmigaOS 4.1 PPC, MUI; converts to HTML and opens a browser.
+- **smu** (text/misc, 2008): MorphOS, a Markdown-to-HTML converter.
+
+So this one is not the first Markdown program for the classic Amiga, but it is the only one
+that runs inside a terminal or Shell window, needs nothing installed beside it, works on 80
+columns, and shows the text itself (no HTML step). No Aminet package is called "Markdown".
+
 ## The files
 
 | File | What |
