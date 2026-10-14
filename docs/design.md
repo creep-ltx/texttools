@@ -18,8 +18,12 @@ Not yet tried by the user. Not on the NAS or GitHub: a local git repository only
 
 **Next:**
 - the user's own try; then install (`C:Markdown`? ask) and a NAS remote like the others (ask).
+- also tested 2026-10-14: CTerm with TrueType (Noto Sans Mono 14: reads best; bold, underline,
+  strike show; no italic in that font) and a plain AmigaOS Shell window with Topaz 8 (`SetFont
+  topaz 8` in it): Workbench's pens, ASCII lines, `#` for pictures; strikethrough does not show
+  there (console.device has no SGR 9).
 - not tried yet on the A1200: the format menu (Ctrl+N), `table`, `toc`, ticking a box with `x`,
-  OpenURL (is openurl.library installed?), a plain console (CON:, no CTerm), a Latin-1 file.
+  OpenURL (is openurl.library installed?), a Latin-1 file.
 - ideas: `.man` pages (CUtils' format, MAN:english/...: the CUtils session offered it),
   footnotes, a dim front-matter block is there but untested, mouse selection in the view.
 
@@ -90,5 +94,7 @@ Not yet tried by the user. Not on the NAS or GitHub: a local git repository only
 - vamos: give `--cpu 68020` (else Alert 68020); it sees relative paths only (an absolute Linux
   path is "not found"); a 4 MB static buffer is too much for its memory.
 - Fonts: CTerm draws box lines (U+2500-257F) and block elements (U+2580-259F) itself; other
-  symbols come from the font: U+25E6, U+24D8, U+25A3 were missing in the user's CTerm font. Use
-  Latin-1, those two ranges, and U+2022 (seen working).
+  symbols come from the font: U+25E6, U+24D8, U+25A3 were missing in MicroKnight 8 and U+2713
+  in Noto Sans Mono. Use Latin-1, those two ranges, and U+2022 (seen working in both).
+- Testing a different CTerm font: CTerm reads ENV:CTerm.prefs at start (truetype=1, ttfile=,
+  ttsize=); change the ENV: copy only, start CTerm, put the saved copy back after.

@@ -2230,7 +2230,7 @@ static long list(SL *L, long n, long i)
         setcell(&f[pw++], ' ', TC_DEFAULT, TC_DEFAULT, 0);
         if (task) {
             setcell(&f[pw++], '[', C_DIMT, TC_DEFAULT, 0);
-            setcell(&f[pw++], done ? G(0x2713, 'x') : ' ', done ? C_DONE : C_DIMT, TC_DEFAULT,
+            setcell(&f[pw++], done ? 'x' : ' ', done ? C_DONE : C_DIMT, TC_DEFAULT,
                     TA_BOLD);
             setcell(&f[pw++], ']', C_DIMT, TC_DEFAULT, 0);
             setcell(&f[pw++], ' ', TC_DEFAULT, TC_DEFAULT, 0);
