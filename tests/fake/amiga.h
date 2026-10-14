@@ -1,5 +1,5 @@
 /* A stand-in for the Amiga headers: enough of exec and dos, on Linux
- * files, to run Fude's Markdown renderer on the PC (tests/run.sh).
+ * files, to run Markdown's Markdown renderer on the PC (tests/run.sh).
  * (From Maki's tests.) */
 #ifndef FAKE_AMIGA_H
 #define FAKE_AMIGA_H

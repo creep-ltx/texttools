@@ -1,4 +1,6 @@
-# Fude: design and state
+# Markdown: design and state
+
+(Called Fude until 2026-10-14; the user preferred the plain name "Markdown".)
 
 ## Start here (2026-10-14, 0.1b1)
 
@@ -11,11 +13,11 @@ It started as a copy of Sumi 0.2b2 (the whole editor), with the Markdown view ad
 the view (headings, emphasis, lists, task boxes, quotes and alerts, code boxes with colours,
 tables, pictures), links followed between files and to headings, Back, the outline, find, edit
 and split with the view following the typing, list continuation on Return, Ctrl+B, quitting with
-the save question. Not installed anywhere: only RAM:Fude on the A1200 (gone at the next reset).
+the save question. Not installed anywhere: only RAM:Markdown on the A1200 (gone at the next reset).
 Not yet tried by the user. Not on the NAS or GitHub: a local git repository only.
 
 **Next:**
-- the user's own try; then install (`C:Fude`? ask) and a NAS remote like the others (ask).
+- the user's own try; then install (`C:Markdown`? ask) and a NAS remote like the others (ask).
 - not tried yet on the A1200: the format menu (Ctrl+N), `table`, `toc`, ticking a box with `x`,
   OpenURL (is openurl.library installed?), a plain console (CON:, no CTerm), a Latin-1 file.
 - ideas: `.man` pages (CUtils' format, MAN:english/...: the CUtils session offered it),
@@ -71,8 +73,8 @@ Not yet tried by the user. Not on the NAS or GitHub: a local git repository only
 
 - `tests/run.sh [N]`: the PC harness under ASAN/UBSAN on the sample and N random files, and the
   68020 build of the same harness under vamos, output compared byte for byte.
-- On the A1200: `wasabi deploy Fude RAM:Fude`, start CTerm (`Run >NIL: CTerm`, its own screen),
-  `wasabi key type 'RAM:Fude file.md' --enter`, `wasabi grab`. `wasabi key press slash` does not
+- On the A1200: `wasabi deploy Markdown RAM:Markdown`, start CTerm (`Run >NIL: CTerm`, its own screen),
+  `wasabi key type 'RAM:Markdown file.md' --enter`, `wasabi grab`. `wasabi key press slash` does not
   exist: `wasabi key type '/'`. Typed letters in the view are commands: a mistyped search typed
   into the file once (e, then letters). ARexx `QUIT` did not close CTerm with a Shell tab open;
   `endcli` in the tab did.

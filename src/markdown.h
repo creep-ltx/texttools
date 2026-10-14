@@ -1,9 +1,9 @@
-/* Fude - a Markdown viewer and editor that lives inside the terminal (a
+/* Markdown - a Markdown viewer and editor that lives inside the terminal (a
  * CTerm tab or pane, or any Amiga console window). Sumi's editor, with
  * the Markdown shown as it reads: headings, lists, tables, code, links
  * to follow, pictures. Shared state and the functions the files call. */
-#ifndef FUDE_H
-#define FUDE_H
+#ifndef MARKDOWN_H
+#define MARKDOWN_H
 
 #include <exec/types.h>
 #include <dos/dos.h>
@@ -128,7 +128,7 @@ enum {
 };
 extern const char *const actnames[A_COUNT];
 extern const char *const actdesc[A_COUNT];
-void keys_load(void);                       /* ENV(ARC):Fude/Fude.keys, written when missing */
+void keys_load(void);                       /* ENV(ARC):Markdown/Markdown.keys, written when missing */
 int keys_find(int key, int view);           /* the action bound (editing or viewing), or A_NONE */
 int keys_first(int act, char *name, int view);  /* its first key as a name ("^S"), 0 none */
 void keyname(int key, char *dst, int shortform);

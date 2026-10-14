@@ -1,25 +1,25 @@
-/* keys - every key is the person's: ENVARC:Fude/Fude.keys, one binding
+/* keys - every key is the person's: ENVARC:Markdown/Markdown.keys, one binding
  * a line ("<C-s> save", "<A-Left> wordleft", "<F3> findnext"; "none"
  * takes a key away; ';' starts a comment). Two sets: the editor's (from
  * the top, or after "[edit]") and the view's (after "[view]"), where a
  * letter is a command, as in a pager. Written with the defaults - micro's
  * and nano's Ctrl keys, less's letters - when it is missing.
- * ENV:Fude/Fude.keys (the copy made at boot) is read first.
+ * ENV:Markdown/Markdown.keys (the copy made at boot) is read first.
  *
  * Amiga facts behind the defaults: Right Amiga keys belong to CTerm's
  * menus and Left Amiga keys to its panes (a program in the terminal
  * never sees them); Ctrl-C..F come as signals (tui.c makes them keys);
  * Ctrl-H is Backspace, Ctrl-I Tab, Ctrl-M Return; the A1200 has no
  * Home, End or Page keys, so Ctrl/Alt+arrows do their work (CTerm sends
- * those to a program like Fude, in xterm's form). */
+ * those to a program like Markdown, in xterm's form). */
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 
-#define KEYFILE "ENVARC:Fude/Fude.keys"
-#define KEYENV  "ENV:Fude/Fude.keys"
+#define KEYFILE "ENVARC:Markdown/Markdown.keys"
+#define KEYENV  "ENV:Markdown/Markdown.keys"
 #define MAXB    320
 
 const char *const actnames[A_COUNT] = {
@@ -72,7 +72,7 @@ const char *const actdesc[A_COUNT] = {
 
 /* the defaults, as the file says them */
 static const char defaults[] =
-    "; Fude's keys: one a line, KEY ACTION. <C-x> is Ctrl+X, <A-x> Alt, <S-x> Shift.\n"
+    "; Markdown's keys: one a line, KEY ACTION. <C-x> is Ctrl+X, <A-x> Alt, <S-x> Shift.\n"
     "; Keys: <Up> <Down> <Left> <Right> <Home> <End> <PgUp> <PgDn> <Ins> <Del> <BS>\n"
     "; <Tab> <Enter> <Esc> <Help> <Space> <F1>-<F12>, or a character. 'none' takes a key away.\n"
     "; (Right Amiga keys are CTerm's menus, Left Amiga keys its panes: not here.)\n"
@@ -270,7 +270,7 @@ static void parse(char *text)
             for (act = 0; act < A_COUNT && !same(a, actnames[act]); act++) ;
             if (!key || act == A_COUNT) {
                 if (!keysbad[0]) {
-                    strcpy(keysbad, "Fude.keys: not understood: ");
+                    strcpy(keysbad, "Markdown.keys: not understood: ");
                     strncat(keysbad, k, 40);
                 }
             } else
@@ -314,7 +314,7 @@ void keys_load(void)
     char *t, *d;
     keysbad[0] = 0;
     nbinds = 0;
-    /* the defaults first, the person's file over them: a key Fude gains in
+    /* the defaults first, the person's file over them: a key Markdown gains in
      * a new version is there without editing the file, and the file wins */
     if ((d = AllocVec(sizeof(defaults), MEMF_ANY)) != NULL) {
         memcpy(d, defaults, sizeof(defaults));
@@ -325,8 +325,8 @@ void keys_load(void)
     if (!t) t = readall(KEYFILE);
     if (!t) {
         /* first start: the defaults, written for the person to change */
-        writeto("ENVARC:Fude", KEYFILE);
-        writeto("ENV:Fude", KEYENV);
+        writeto("ENVARC:Markdown", KEYFILE);
+        writeto("ENV:Markdown", KEYENV);
         if ((t = AllocVec(sizeof(defaults), MEMF_ANY)) != NULL) memcpy(t, defaults, sizeof(defaults));
     }
     if (t) {

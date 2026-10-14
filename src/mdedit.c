@@ -6,7 +6,7 @@
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 #include "md.h"
 
 static void selr(Buf *b, Pos *a, Pos *z)

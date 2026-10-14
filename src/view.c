@@ -13,7 +13,7 @@
 #include <proto/dos.h>
 #include <inline/macros.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 #include "md.h"
 
 int split, ew = 80;

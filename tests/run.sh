@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run.sh - Fude's renderer (src/md.c) on the PC and as the Amiga build:
+# run.sh - Markdown's renderer (src/md.c) on the PC and as the Amiga build:
 #  1. the PC harness under ASAN/UBSAN on the sample and on random
 #     Markdown (crashes, hangs, memory errors);
 #  2. the 68020 build under vamos, its output compared with the PC's

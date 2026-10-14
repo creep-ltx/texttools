@@ -1,4 +1,4 @@
-/* Fude - a Markdown viewer and editor that lives inside the terminal.
+/* Markdown - a Markdown viewer and editor that lives inside the terminal.
  * A Markdown file opens as it reads (view.c, md.c): headings, lists,
  * tables, code in boxes, links to follow, pictures (in CTerm). Ctrl+E
  * turns it into text to edit - Sumi's editor, simple but complete in the
@@ -8,7 +8,7 @@
  * kept as they are. Ctrl+P edits with the view beside, following the
  * cursor. Every key is the person's (keys.c).
  *
- * Usage: fude [-e] [+LINE] [FILE ...]      (-e: edit, not view)
+ * Usage: markdown [-e] [+LINE] [FILE ...]      (-e: edit, not view)
  *
  * The screen, top to bottom: the tabs, the text (line numbers on the
  * left) or the view, the status line, and a line for messages,
@@ -22,14 +22,14 @@
 #include <proto/intuition.h>
 #include <string.h>
 #include <stdlib.h>
-#include "fude.h"
+#include "markdown.h"
 #include "md.h"
 
-static const char version[] = "$VER: Fude 0.1b1 (14.10.2026) - Markdown viewer and editor";
+static const char version[] = "$VER: Markdown 0.1b1 (14.10.2026) - Markdown viewer and editor";
 
 #define MAXTABS 24
-#define PREFS   "ENVARC:Fude/Fude.prefs"
-#define PREFENV "ENV:Fude/Fude.prefs"
+#define PREFS   "ENVARC:Markdown/Markdown.prefs"
+#define PREFENV "ENV:Markdown/Markdown.prefs"
 
 int tabsize = 8, tabspaces = 0, numbers = 1, autoindent = 1;
 int backups = 0;
@@ -148,8 +148,8 @@ static void prefs_write(const char *dir, const char *path)
 
 void prefs_save(void)
 {
-    prefs_write("ENVARC:Fude", PREFS);
-    prefs_write("ENV:Fude", PREFENV);
+    prefs_write("ENVARC:Markdown", PREFS);
+    prefs_write("ENV:Markdown", PREFENV);
 }
 
 void say(const char *m, int err)
@@ -433,11 +433,11 @@ static void drawtabs(void)
             const char *n = tabs[i]->path[0] ? basename_(tabs[i]->path) : "new";
             w += (int)strlen(n) + 3;
         }
-        if (w <= tui_cols - 6 || from >= ct) break;
+        if (w <= tui_cols - 10 || from >= ct) break;
         from++;
     }
-    tui_put(x, 0, "Fude", 4, 4, TC_DEFAULT, TA_BOLD);
-    x += 5;
+    tui_put(x, 0, "Markdown", 8, 4, TC_DEFAULT, TA_BOLD);
+    x += 9;
     if (from > 0) {
         tui_putc(x, 0, '<', C_DIM, TC_DEFAULT, 0);
         x += 2;
@@ -626,7 +626,7 @@ static int nocase(const char *a, const char *b, long n)
 }
 
 /* buf edited in place; 1 Return, 0 Esc. file: Tab completes names */
-/* the questions' kinds (fude.h), each with its own history (Up/Down) */
+/* the questions' kinds (markdown.h), each with its own history (Up/Down) */
 #define PHIST 12
 static char phist[P_KINDS][PHIST][PATHMAX];
 static int phn[P_KINDS];
@@ -1641,9 +1641,9 @@ static void dogoto(Buf *b)
 
 /* ---- files and tabs ----------------------------------------------------- */
 
-/* ---- where each file was left (ENVARC:Fude/Fude.places) ---------------- */
+/* ---- where each file was left (ENVARC:Markdown/Markdown.places) ---------------- */
 
-#define PLACES "ENVARC:Fude/Fude.places"
+#define PLACES "ENVARC:Markdown/Markdown.places"
 #define MAXPLACES 100
 static struct { long line, col; char path[PATHMAX]; } *places;
 static int nplaces, placesread;
@@ -1697,7 +1697,7 @@ static void places_save(void)
     int i;
     char t[PATHMAX + 30], n[24];
     if (!places || !nplaces) return;
-    if (!(l = Lock((STRPTR)"ENVARC:Fude", SHARED_LOCK))) l = CreateDir((STRPTR)"ENVARC:Fude");
+    if (!(l = Lock((STRPTR)"ENVARC:Markdown", SHARED_LOCK))) l = CreateDir((STRPTR)"ENVARC:Markdown");
     if (l) UnLock(l);
     if (!(fh = Open((STRPTR)PLACES, MODE_NEWFILE))) return;
     for (i = 0; i < nplaces; i++) {
@@ -1950,7 +1950,7 @@ static void help(void)
         A_COMMAND, A_ESCAPE, A_HELP, -1
     };
     static const char *const intro[] = {
-        "Fude - a Markdown viewer and editor inside the terminal",
+        "Markdown - a Markdown viewer and editor inside the terminal",
         "",
         "A Markdown file opens as it reads; the view key turns it into text to edit",
         "and back, the split key edits with the view beside. Links: Tab to one,",
@@ -1964,7 +1964,7 @@ static void help(void)
         "text, 0 all), pictures on|off, tabsize N, tabs spaces|tabs, numbers/",
         "autoindent/wrap/autoclose/whitespace/regex/backup on|off, wrapcol N,",
         "case smart|exact|any, encoding utf8|latin1, lineends lf|crlf.",
-        "Keys: ENVARC:Fude/Fude.keys ([edit] and [view])",
+        "Keys: ENVARC:Markdown/Markdown.keys ([edit] and [view])",
         NULL
     };
     int top = 0, total, r, i;
@@ -2278,7 +2278,7 @@ static void mouse(TuiEv *e)
         return;
     }
     if (e->mact == TB_PRESS && e->row == 0) {   /* the tab bar: which tab */
-        int x = 5, i, from = 0;
+        int x = 9, i, from = 0;
         for (i = from; i < ntabs; i++) {
             const char *n = tabs[i]->path[0] ? basename_(tabs[i]->path) : "new";
             int w = (int)strlen(n) + 3;
@@ -2861,7 +2861,7 @@ static void key(int k)
             char m[80], n[24];
             keyname(k, n, 0);
             strcpy(m, n);
-            strcat(m, " does nothing here (ENVARC:Fude/Fude.keys [view]) - h: the keys");
+            strcat(m, " does nothing here (ENVARC:Markdown/Markdown.keys [view]) - h: the keys");
             say(m, 1);
         }
         return;
@@ -2885,7 +2885,7 @@ static void key(int k)
         char m[80], n[24];
         keyname(k, n, 0);
         strcpy(m, n);
-        strcat(m, " does nothing (ENVARC:Fude/Fude.keys)");
+        strcat(m, " does nothing (ENVARC:Markdown/Markdown.keys)");
         say(m, 1);
     }
 }
@@ -2898,8 +2898,8 @@ static int smain(int argc, char **argv)
     long jump = 0;
     TuiEv e;
     if (!tui_possible()) {
-        PutStr((STRPTR)"Fude is a Markdown viewer and editor for the terminal: start it from a\n"
-                       "Shell (in CTerm, or a console window). Usage: fude [-e] [+LINE] [FILE ...]\n");
+        PutStr((STRPTR)"Markdown is a Markdown viewer and editor for the terminal: start it from a\n"
+                       "Shell (in CTerm, or a console window). Usage: markdown [-e] [+LINE] [FILE ...]\n");
         return 10;
     }
     prefs_load();
@@ -2919,12 +2919,12 @@ static int smain(int argc, char **argv)
         }
     }
     if (!ntabs && !addtab(NULL)) {
-        PutStr((STRPTR)"Fude: out of memory\n");
+        PutStr((STRPTR)"Markdown: out of memory\n");
         return 20;
     }
     if (ntabs > 1) ct = 0;
     if (!tui_open()) {
-        PutStr((STRPTR)"Fude: cannot use this console\n");
+        PutStr((STRPTR)"Markdown: cannot use this console\n");
         for (i = 0; i < ntabs; i++) buf_free(tabs[i]);
         return 20;
     }

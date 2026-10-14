@@ -7,7 +7,7 @@
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 
 static long serials;            /* every undo step gets its own */
 static int replaying;           /* undo/redo at work: nothing recorded */

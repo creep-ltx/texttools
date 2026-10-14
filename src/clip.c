@@ -7,7 +7,7 @@
 #include <devices/clipboard.h>
 #include <proto/exec.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 
 static struct MsgPort *cport;
 static struct IOClipReq *creq;

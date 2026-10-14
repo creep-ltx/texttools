@@ -1,11 +1,7 @@
-# Fude - Markdown viewer and editor
+# Markdown - a Markdown viewer and editor
 
-*Fude* (筆) is Japanese for the brush. Sumi (ink) writes the text, Maki
-unrolls it, Ahiru the duck keeps the files, and Fude lays the ink out as
-it should read.
-
-Fude shows Markdown the way it reads and edits it, **inside the
-terminal**: you start it from a Shell in CTerm (or any console window) and
+Markdown shows Markdown files the way they read, and edits them, **inside
+the terminal** (a sibling of Sumi the editor and Maki the pager): you start it from a Shell in CTerm (or any console window) and
 it draws there, in that tab or pane. It is for AmigaOS 3.2 and a fast
 Amiga (PiStorm, accelerator).
 
@@ -34,14 +30,14 @@ Amiga (PiStorm, accelerator).
   numbers, task box, code block, rule, table. The commands `table` (make
   the table at the cursor neat) and `toc` (a list of the headings, as
   links).
-- **Every key is yours**: `ENVARC:Fude/Fude.keys`, with an `[edit]` and a
+- **Every key is yours**: `ENVARC:Markdown/Markdown.keys`, with an `[edit]` and a
   `[view]` part, written with the defaults on the first start. `h` (in
   the view) or Help shows every key as bound now.
 
 ## Usage
 
 ```
-fude [-e] [+LINE] [FILE ...]
+markdown [-e] [+LINE] [FILE ...]
 ```
 
 A `.md` file opens in the view; `-e` opens it to edit. Other files open
@@ -79,7 +75,7 @@ Ctrl+N format, Shift+F1 the outline.
 
 The command key (Ctrl+U) takes `set width N` (the view's text at most so
 wide, 0 the whole width; 100 at first), `set pictures on|off` and all of
-Sumi's settings. They are kept in `ENVARC:Fude/Fude.prefs`.
+Sumi's settings. They are kept in `ENVARC:Markdown/Markdown.prefs`.
 
 ## Building
 

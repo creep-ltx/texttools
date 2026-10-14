@@ -17,7 +17,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 #include "md.h"
 
 int md_unicode = 1, md_cellw, md_cellh, md_pictures = 1, md_maxpicrows = 20;

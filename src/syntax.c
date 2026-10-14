@@ -4,7 +4,7 @@
  * inside a long string), so a change only colours again what it moved. */
 #include <exec/types.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 
 const char *const langnames[L_COUNT] = {
     "text", "C", "68k asm", "ARexx", "Amiga E", "AmigaGuide", "AmigaDOS", "Python", "Markdown",

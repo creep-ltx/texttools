@@ -1,8 +1,8 @@
-# Fude, the brush
+# Markdown, the viewer
 
 A *Markdown* viewer and **editor** that lives inside the terminal. It shows
 `code`, ~~mistakes~~, ***both at once***, and [links](other.md) to follow.
-Bare addresses work too: https://aminet.net/package/util/misc/Fude and
+Bare addresses work too: https://aminet.net/package/util/misc/Markdown and
 <someone@example.com>. A hard break comes here  
 and the line goes on. An escaped \*star\* stays a star.
 

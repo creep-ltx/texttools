@@ -901,7 +901,7 @@ void tui_suspend(void)
 /* after a command in the terminal: its output stays until a key */
 void tui_keyafter(void)
 {
-    static const char m[] = "\n\x1b[7m Fude: a key goes back \x1b[0m";
+    static const char m[] = "\n\x1b[7m Markdown: a key goes back \x1b[0m";
     char c;
     if (!topen) return;
     Write(tout, (APTR)m, sizeof(m) - 1);

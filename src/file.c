@@ -9,7 +9,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <string.h>
-#include "fude.h"
+#include "markdown.h"
 
 static char errbuf[100];
 
@@ -158,10 +158,10 @@ int file_save(Buf *b, const char *path)
         for (k = 0; k < 8; k++) tag[k] = "0123456789abcdef"[(v >> (28 - 4 * k)) & 15];
         tag[8] = 0;
         strcpy(tmp, dir);
-        strcat(tmp, "fude-new-");
+        strcat(tmp, "markdown-new-");
         strcat(tmp, tag);
         strcpy(old, dir);
-        strcat(old, "fude-old-");
+        strcat(old, "markdown-old-");
         strcat(old, tag);
     }
     lock = Lock((STRPTR)path, SHARED_LOCK);
