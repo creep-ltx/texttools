@@ -165,7 +165,9 @@ int view_action(int act);                   /* a key's action in the view; FALSE
 void view_mouse(TuiEv *e, int x0, int w, int y0, int h);
 void view_tofile(Buf *b);                   /* the view's place to the cursor (into editing) */
 void view_fromfile(Buf *b);                 /* the cursor's place to the view */
-void view_follow_cursor(Buf *b, int crow);  /* split: the view beside, at the cursor's line */
+void view_follow_cursor(Buf *b, int crow, int w);  /* split: the view (w wide) at the cursor's line */
+extern int viewrows;                        /* the view's height now */
+extern int splitmode;                       /* split: 0 by the width, 1 beside, 2 under */
 void view_hints(void);
 void view_status(void);
 void view_close(Buf *b);                    /* a tab goes */

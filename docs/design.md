@@ -16,6 +16,10 @@ and split with the view following the typing, list continuation on Return, Ctrl+
 the save question. Not installed anywhere: only RAM:Markdown on the A1200 (gone at the next reset).
 Not yet tried by the user. Not on the NAS or GitHub: a local git repository only.
 
+**80 columns first** (the user, 2026-10-14: most Amigas are 640x256): split stacks the text over
+the view below 120 columns (`layout()` in main.c: ew x eh for the editor, vx/vy/vw/vh for the
+view); tested in a 640x256 Topaz 8 window on the A1200.
+
 **Next:**
 - the user's own try; then install (`C:Markdown`? ask) and a NAS remote like the others (ask).
 - also tested 2026-10-14: CTerm with TrueType (Noto Sans Mono 14: reads best; bold, underline,

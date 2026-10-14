@@ -22,8 +22,9 @@ Amiga (PiStorm, accelerator).
 - **Editing**: `e` (or Ctrl+E) turns the view into text to edit, and back.
   The editor is Sumi's, whole: tabs, undo, the clipboard, search and
   replace, the mouse, macros.
-- **Split** (Ctrl+P): edit on the left, the view on the right, following
-  the cursor as you type.
+- **Split** (Ctrl+P): the text and the view together, the view following
+  the cursor as you type: one above the other on 80 columns (640x256, most
+  Amigas), side by side on 120 columns or more (`set split auto|side|under`).
 - **Writing Markdown**: Return goes on with a list or a quote (on an
   empty item it ends it), Ctrl+B makes **bold**, Ctrl+N is the format
   menu: italic, code, strike, link, picture, heading, quote, list,
@@ -75,7 +76,7 @@ Ctrl+N format, Shift+F1 the outline.
 
 The command key (Ctrl+U) takes `set width N` (the view's text at most so
 wide, 0 the whole width; 100 at first), `set pictures on|off` and all of
-Sumi's settings. They are kept in `ENVARC:Markdown/Markdown.prefs`.
+Sumi's settings, and `set split auto|side|under`. They are kept in `ENVARC:Markdown/Markdown.prefs`.
 
 ## Building
 

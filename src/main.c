@@ -94,6 +94,7 @@ static void prefs_load(void)
         else if (!strcmp(line, "backup")) backups = *v == '1';
         else if (!strcmp(line, "pictures")) pictures = *v == '1';
         else if (!strcmp(line, "split")) split = *v == '1';
+        else if (!strcmp(line, "splitmode")) splitmode = atoi(v) >= 0 && atoi(v) <= 2 ? atoi(v) : 0;
         else if (!strcmp(line, "mdwidth")) mdwidth = atoi(v) == 0 || (atoi(v) >= 20 && atoi(v) <= 400) ? atoi(v) : 100;
     }
     Close(fh);
@@ -125,6 +126,7 @@ static void prefs_write(const char *dir, const char *path)
     strcat(t, casemode == 1 ? "\ncase=1" : casemode == 2 ? "\ncase=2" : "\ncase=0");
     strcat(t, pictures ? "\npictures=1" : "\npictures=0");
     strcat(t, split ? "\nsplit=1" : "\nsplit=0");
+    strcat(t, splitmode == 1 ? "\nsplitmode=1" : splitmode == 2 ? "\nsplitmode=2" : "\nsplitmode=0");
     {
         char n[8];
         int v = mdwidth, k = 7;
@@ -164,6 +166,37 @@ void say(const char *m, int err)
 int textrows(void)
 {
     return tui_rows - 3 > 1 ? tui_rows - 3 : 1;
+}
+
+/* the screen's parts while editing: the text (ew x eh at the top left)
+ * and, split, the view beside it (a wide screen) or under it (80
+ * columns: most Amigas) - splitmode 0 decides by the width, 1 beside,
+ * 2 under */
+int splitmode;
+static int eh = 20, vx, vy, vw, vh;
+
+static void layout(void)
+{
+    int h = textrows();
+    ew = tui_cols;
+    eh = h;
+    if (!split || B->view) {
+        vx = 0, vy = 1, vw = tui_cols, vh = h;
+        return;
+    }
+    if (splitmode == 1 || (splitmode == 0 && tui_cols >= 120)) {
+        ew = tui_cols / 2;
+        vx = ew + 1, vy = 1, vw = tui_cols - ew - 1, vh = h;
+    } else {
+        eh = (h - 1) / 2 > 3 ? (h - 1) / 2 : 3;
+        if (eh >= h - 2) eh = h - 2 > 1 ? h - 2 : 1;
+        vx = 0, vy = eh + 2, vw = tui_cols, vh = h - eh - 1;
+    }
+}
+
+static int edrows(void)
+{
+    return eh;
 }
 
 static int gutter(Buf *b)
@@ -213,7 +246,7 @@ static void vstep(Buf *b, int d)
 static void scrollto(Buf *b)
 {
     long x = buf_xof(b, b->cur.line, b->cur.col);
-    int h = textrows(), w = textcols(b);
+    int h = edrows(), w = textcols(b);
     if (softwrap) {
         long cs = x / w, rows, ln;
         b->left = 0;
@@ -542,10 +575,12 @@ static void drawstatus(void)
 void drawall(void)
 {
     Buf *b = B;
-    int r, h = textrows();
+    int r, h;
     long ln, seg, cy = -1, cx = 0;
+    layout();
+    h = edrows();
+    viewrows = vh;
     if (b->view) {
-        ew = tui_cols;
         drawtabs();
         view_draw(b, 0, tui_cols, 1, h, 1);
         view_status();
@@ -560,8 +595,7 @@ void drawall(void)
         view_pictures();
         return;
     }
-    ew = split && tui_cols >= 40 ? tui_cols / 2 : tui_cols;
-    if (ew >= tui_cols) view_forget();      /* no view: no pictures */
+    if (!split) view_forget();              /* no view: no pictures */
     if (follow) scrollto(b);
     if (!hlbuf && (hlbuf = AllocVec(256, MEMF_ANY)) != NULL) hlcap = 256;
     bracketmatch(b);
@@ -587,10 +621,13 @@ void drawall(void)
             if (gutter(b)) tui_putc(gutter(b) - 2, r + 1, '~', C_DIM, TC_DEFAULT, 0);
         }
     }
-    if (ew < tui_cols) {   /* the view beside, at the cursor's line */
-        for (r = 0; r < h; r++) tui_putc(ew, r + 1, tui_box(BX_V), C_DIM, TC_DEFAULT, 0);
-        view_follow_cursor(b, cy >= 0 ? (int)cy : 0);
-        view_draw(b, ew + 1, tui_cols - ew - 1, 1, h, 0);
+    if (split) {           /* the view beside or under, at the cursor's line */
+        if (vy == 1)
+            for (r = 0; r < h; r++) tui_putc(ew, r + 1, tui_box(BX_V), C_DIM, TC_DEFAULT, 0);
+        else
+            tui_fill(0, vy - 1, tui_cols, tui_box(BX_H), C_DIM, TC_DEFAULT, 0);
+        view_follow_cursor(b, cy >= 0 ? (int)(vy == 1 ? cy : cy * vh / (h > 0 ? h : 1)) : 0, vw);
+        view_draw(b, vx, vw, vy, vh, 0);
     }
     drawstatus();
     if (msg[0]) {
@@ -601,7 +638,7 @@ void drawall(void)
         hints();
     tui_cursor(gutter(b) + (int)cx, (int)cy + 1, cy >= 0 && cx >= 0 && cx < textcols(b));
     tui_flush();
-    if (ew < tui_cols) view_pictures();
+    if (split) view_pictures();
 }
 
 /* ---- a question on the bottom line -------------------------------------- */
@@ -947,22 +984,22 @@ static void move(int act)
     case A_PAGEUP: case A_SELPAGEUP:
         if (softwrap) {
             int k;
-            for (k = 0; k < textrows() - 1; k++) vstep(b, -1);
+            for (k = 0; k < edrows() - 1; k++) vstep(b, -1);
         } else {
-            b->top -= textrows() - 1;
+            b->top -= edrows() - 1;
             if (b->top < 0) b->top = 0;
         }
-        mv_vert(b, -(textrows() - 1));
+        mv_vert(b, -(edrows() - 1));
         break;
     case A_PAGEDOWN: case A_SELPAGEDOWN:
         if (softwrap) {
             int k;
-            for (k = 0; k < textrows() - 1; k++) vstep(b, 1);
+            for (k = 0; k < edrows() - 1; k++) vstep(b, 1);
         } else {
-            b->top += textrows() - 1;
+            b->top += edrows() - 1;
             if (b->top > b->n - 1) b->top = b->n - 1;
         }
-        mv_vert(b, textrows() - 1);
+        mv_vert(b, edrows() - 1);
         break;
     case A_FILESTART: case A_SELFILESTART: b->cur.line = 0; b->cur.col = 0; setwant(b); break;
     case A_FILEEND: case A_SELFILEEND:
@@ -1635,7 +1672,7 @@ static void dogoto(Buf *b)
     b->sel = 0;
     setwant(b);
     follow = 1;
-    b->top = b->cur.line - textrows() / 2;
+    b->top = b->cur.line - edrows() / 2;
     if (b->top < 0) b->top = 0;
 }
 
@@ -1727,7 +1764,7 @@ static int places_recall(Buf *b)
         if (!nocase(places[i].path, b->path, -1)) {
             b->cur.line = places[i].line < b->n ? places[i].line : b->n - 1;
             b->cur.col = places[i].col <= b->l[b->cur.line].len ? places[i].col : 0;
-            b->top = b->cur.line > textrows() / 2 ? b->cur.line - textrows() / 2 : 0;
+            b->top = b->cur.line > edrows() / 2 ? b->cur.line - edrows() / 2 : 0;
             return 1;
         }
     return 0;
@@ -1961,7 +1998,8 @@ static void help(void)
         "italic, code, links, headings, lists, quotes, tasks, tables neat.",
         "Commands (the command key): save NAME, open NAME, insert NAME, goto N,",
         "run COMMAND, count, table, toc, lang NAME, quit; set: width N (the view's",
-        "text, 0 all), pictures on|off, tabsize N, tabs spaces|tabs, numbers/",
+        "text, 0 all), pictures on|off, split auto|side|under (auto: beside on 120",
+        "columns or more, else under), tabsize N, tabs spaces|tabs, numbers/",
         "autoindent/wrap/autoclose/whitespace/regex/backup on|off, wrapcol N,",
         "case smart|exact|any, encoding utf8|latin1, lineends lf|crlf.",
         "Keys: ENVARC:Markdown/Markdown.keys ([edit] and [view])",
@@ -2168,6 +2206,10 @@ static void command(void)
         else if (!strcmp(a, "width") && (atoi(v) == 0 || (atoi(v) >= 20 && atoi(v) <= 400)) &&
                  (*v >= '0' && *v <= '9')) mdwidth = atoi(v);
         else if (!strcmp(a, "pictures") && onoff(v, &pictures)) view_forget();
+        else if (!strcmp(a, "split") && (!strcmp(v, "auto") || !strcmp(v, "side") || !strcmp(v, "under"))) {
+            splitmode = !strcmp(v, "side") ? 1 : !strcmp(v, "under") ? 2 : 0;
+            view_forget();
+        }
         else if (!strcmp(a, "case") && (!strcmp(v, "smart") || !strcmp(v, "exact") || !strcmp(v, "any")))
             casemode = !strcmp(v, "smart") ? 0 : !strcmp(v, "exact") ? 1 : 2;
         else if (!strcmp(a, "encoding")) {
@@ -2205,7 +2247,7 @@ static void command(void)
             else say("set lineends lf or crlf", 1);
             return;
         } else {
-            say("set width N, pictures on|off, tabsize N, tabs spaces|tabs, numbers|autoindent|wrap|autoclose|whitespace|regex|backup on|off, wrapcol N, case smart|exact|any, encoding utf8|latin1, lineends lf|crlf", 1);
+            say("set width N, pictures on|off, split auto|side|under, tabsize N, tabs spaces|tabs, numbers|autoindent|wrap|autoclose|whitespace|regex|backup on|off, wrapcol N, case smart|exact|any, encoding utf8|latin1, lineends lf|crlf", 1);
             return;
         }
         prefs_save();
@@ -2259,12 +2301,12 @@ static void mouse(TuiEv *e)
     static int lc = -1, lr = -1, dragging, clicks;
     Buf *b = B;
     Pos p;
-    if (e->row >= 1 && e->row <= textrows() && (b->view || (ew < tui_cols && e->col > ew)) &&
-        !dragging) {
-        if (b->view) view_mouse(e, 0, tui_cols, 1, textrows());
-        else view_mouse(e, ew + 1, tui_cols - ew - 1, 1, textrows());
+    if (e->row >= 1 && e->row <= textrows() && !dragging &&
+        (b->view || (split && e->col >= vx && e->row >= vy))) {
+        view_mouse(e, vx, vw, vy, vh);
         return;
     }
+    if (split && !b->view && e->row == vy - 1 && !dragging) return;   /* the line between */
     if (e->mact == TB_WHEELUP || e->mact == TB_WHEELDOWN) {
         if (softwrap) {
             int k;
@@ -2348,10 +2390,10 @@ static void mouse(TuiEv *e)
             if (softwrap) vstep(b, -1);
             else if (b->top > 0) b->top--;
             mousepos(b, e->col, 1, &p);
-        } else if (e->row > textrows()) {
+        } else if (e->row > edrows()) {
             if (softwrap) vstep(b, 1);
             else if (b->top < b->n - 1) b->top++;
-            mousepos(b, e->col, textrows(), &p);
+            mousepos(b, e->col, edrows(), &p);
         }
         b->cur = p;
         b->sel = pos_cmp(b->anchor, b->cur) != 0;

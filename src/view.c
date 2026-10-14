@@ -46,9 +46,11 @@ static int textw(int w, int full, int *off)
     return tw;
 }
 
+int viewrows = 20;               /* the view's height now (pictures fit in it) */
+
 static int stamp(void)
 {
-    return pictures * 4096 + textrows() + (tui_cellw << 16) + (tui_cellh << 24) +
+    return pictures * 4096 + viewrows + (tui_cellw << 16) + (tui_cellh << 24) +
            (tui_utf8 ? 2048 : 0);
 }
 
@@ -69,7 +71,7 @@ int view_doc(Buf *b, int width)
     md_cellw = tui_cterm ? tui_cellw : 0;
     md_cellh = tui_cterm ? tui_cellh : 0;
     md_pictures = pictures;
-    md_maxpicrows = textrows() - 2 > 3 ? textrows() - 2 : 3;
+    md_maxpicrows = viewrows - 2 > 3 ? viewrows - 2 : 3;
     md_render(d, b, width, b->path[0] ? b->path : NULL);
     d->stamp = st;
     if (keep >= 0) b->vtop = md_rowof(d, keep);
@@ -521,9 +523,9 @@ void view_tofile(Buf *b)
     b->topseg = 0;
 }
 
-void view_follow_cursor(Buf *b, int crow)
+void view_follow_cursor(Buf *b, int crow, int w)
 {
-    int tw = textw(tui_cols - ew - 1, 0, NULL);
+    int tw = textw(w, 0, NULL);
     if (!view_doc(b, tw)) return;
     if (detached >= 0 && detached == b->cur.line) return;
     detached = -1;
