@@ -13,7 +13,7 @@ It started as a copy of Sumi 0.2b2 (the whole editor), with the Markdown view ad
 the view (headings, emphasis, lists, task boxes, quotes and alerts, code boxes with colours,
 tables, pictures), links followed between files and to headings, Back, the outline, find, edit
 and split with the view following the typing, list continuation on Return, Ctrl+B, quitting with
-the save question. Not installed anywhere: only RAM:Markdown on the A1200 (gone at the next reset).
+the save question. Installed on the A1200 as C:Markdown (2026-10-14, the user asked; nothing was there before).
 Not yet tried by the user. Not on the NAS or GitHub: a local git repository only.
 
 **80 columns first** (the user, 2026-10-14: most Amigas are 640x256): split stacks the text over
@@ -21,7 +21,7 @@ the view below 120 columns (`layout()` in main.c: ew x eh for the editor, vx/vy/
 view); tested in a 640x256 Topaz 8 window on the A1200.
 
 **Next:**
-- the user's own try; then install (`C:Markdown`? ask) and a NAS remote like the others (ask).
+- the user's own try; a NAS remote like the others (ask).
 - also tested 2026-10-14: CTerm with TrueType (Noto Sans Mono 14: reads best; bold, underline,
   strike show; no italic in that font) and a plain AmigaOS Shell window with Topaz 8 (`SetFont
   topaz 8` in it): Workbench's pens, ASCII lines, `#` for pictures; strikethrough does not show
