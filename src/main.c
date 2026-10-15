@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "maki.h"
 
-static const char version[] = "$VER: Maki 0.1b2 (15.10.2026) - pager";
+static const char version[] = "$VER: Maki 0.1b3 (16.10.2026) - pager";
 
 typedef struct {
     Src *s;
@@ -741,6 +741,7 @@ static int prompt(const char *q, char *buf, int max, int kind)
                 }
             continue;
         }
+        if (e.type == TE_END) return 0;       /* as Esc: the main loop ends next */
         if (e.type != TE_KEY) continue;
         switch (e.key) {
         case K_ENTER: phist_add(kind, buf); return 1;
@@ -795,6 +796,7 @@ static int onekey(const char *q)
             tui_resized();
             continue;
         }
+        if (e.type == TE_END) return 0;
         if (e.type != TE_KEY) continue;
         msg[0] = 0;
         return e.key == K_ESC ? 0 : e.key;
@@ -1320,6 +1322,7 @@ static int smain(int argc, char **argv)
         switch (e.type) {
         case TE_KEY: key(e.key); break;
         case TE_MOUSE: mouse(&e); break;
+        case TE_END: quitting = 1; break;     /* the terminal is gone (CTerm closing the tab) */
         case TE_RESIZE:
             tui_resized();
             clamp(V);
