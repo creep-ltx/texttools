@@ -25,6 +25,9 @@ that tab or pane. It replaces More:
 - **Characters**: Latin-1, UTF-8 or the PC's CP437 (.ans .nfo .diz),
   guessed by looking. `F7` changes it.
 - **Several files**: `]` and `[` (or F10/F9) go between them.
+- **Drawers**: `maki DRAWER` shows what is in it, as `ls -l` (bits, size,
+  date, name), the names coloured by kind from `ENVARC:FileColours` -
+  the same colours as `ls` and Ahiru.
 - `v` opens Sumi (or ENV:EDITOR) at the line you are reading. Marks
   (`m` + a letter, `'` + the letter), line numbers (F4), long lines folded
   or cut (F8, then Left/Right look aside), `=` describes the file.
@@ -36,7 +39,7 @@ that tab or pane. It replaces More:
 ## Usage
 
 ```
-maki [-N] [-S] [+LINE | +/TEXT] [FILE ...]
+maki [-N] [-S] [+LINE | +/TEXT] [FILE | DRAWER ...]
 command | maki
 ```
 

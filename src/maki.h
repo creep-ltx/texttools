@@ -56,6 +56,7 @@ void src_exit(void);
 Src *src_file(const char *path, char *err);   /* NULL: err says why */
 Src *src_pipe(BPTR in);                       /* reading starts at once */
 Src *src_text(const char *t, long n, const char *title);
+Src *src_drawer(BPTR lock, const char *path, char *err);  /* drawer.c: a drawer listed */
 void src_free(Src *s);
 long src_get(Src *s, long off, UBYTE *d, long n);
 int src_line(Src *s, long i);           /* line i exists (indexing up to it) */

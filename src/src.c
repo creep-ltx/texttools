@@ -186,10 +186,10 @@ Src *src_file(const char *path, char *err)
     if ((fib = AllocDosObject(DOS_FIB, NULL)) != NULL) {
         int dir = Examine(l, fib) && fib->fib_DirEntryType > 0;
         FreeDosObject(DOS_FIB, fib);
-        if (dir) {
+        if (dir) {                      /* its contents, as ls -l (drawer.c) */
+            s = src_drawer(l, path, err);
             UnLock(l);
-            strcpy(err, ": is a drawer");
-            return NULL;
+            return s;
         }
     }
     UnLock(l);

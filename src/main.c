@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "maki.h"
 
-static const char version[] = "$VER: Maki 0.1b1 (12.10.2026) - pager";
+static const char version[] = "$VER: Maki 0.1b2 (15.10.2026) - pager";
 
 typedef struct {
     Src *s;
@@ -1250,9 +1250,16 @@ static int smain(int argc, char **argv)
     /* not a terminal to show in: everything written out, as cat would */
     if (!IsInteractive(Output())) {
         for (i = 0; i < nfiles; i++) {
-            Seek(files[i].s->fh, 0, OFFSET_BEGINNING);
-            copyout(files[i].s->fh, Output());
-            src_free(files[i].s);
+            Src *s = files[i].s;
+            if (s->kind == SK_MEM) {    /* a drawer's listing (drawer.c) */
+                UBYTE b[512];
+                long off = 0, n;
+                while ((n = src_get(s, off, b, sizeof b)) > 0 && Write(Output(), b, n) == n) off += n;
+            } else {
+                Seek(s->fh, 0, OFFSET_BEGINNING);
+                copyout(s->fh, Output());
+            }
+            src_free(s);
         }
         if (!nfiles) copyout(in, Output());
         return rc;
