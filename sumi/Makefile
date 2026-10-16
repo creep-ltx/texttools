@@ -1,7 +1,7 @@
 # Sumi - a text editor that lives inside the terminal. Cross-built with
 # Bebbo's gcc. The screen and keys come from
 # tui.library, the terminal programs' shared toolkit (the CUtils repo,
-# Libs/tui): its tui.h keeps the tui_* names, libtuiglue.a opens the
+# AmigaLibs/tui): its tui.h keeps the tui_* names, libtuiglue.a opens the
 # library when Sumi first needs a terminal. Needs LIBS:tui.library.
 #
 # -fbbb=-: bebbo's backend pass off. With it, tui_flush's cell copy (then in
@@ -15,7 +15,7 @@ AMIGA   ?= $(firstword $(wildcard /opt/amiga $(HOME)/opt/amiga))
 CC      = $(AMIGA)/bin/m68k-amigaos-gcc
 CFLAGS  = -Os -m68020 -noixemul -fomit-frame-pointer -fno-common -fbbb=- -Wall -Wno-pointer-sign
 LDFLAGS = -noixemul -s
-TUI     ?= ../../CUtils/Libs/tui
+TUI     ?= ../../AmigaLibs/tui
 CFLAGS += -I$(TUI)/include
 SRC     = src/main.c src/buf.c src/file.c src/syntax.c src/clip.c src/keys.c
 OBJ     = $(patsubst src/%.c,build/%.o,$(SRC))

@@ -77,7 +77,7 @@ to line 120.
 
 `make` with bebbo's gcc in `~/opt/amiga` (`-fbbb=-`, as Sumi). AmigaOS
 3.x, 68020+. The screen and keys come from **tui.library**, the terminal
-programs' shared toolkit (`Libs/tui` in the CUtils repo, built by `make` here
+programs' shared toolkit (`tui/` in the AmigaLibs repo, built by `make` here
 when needed). Maki needs `LIBS:tui.library` 0.2 or newer; without it, it
 says so and quits.
 

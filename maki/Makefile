@@ -1,7 +1,7 @@
 # Maki - a pager that lives inside the terminal. Cross-built with Bebbo's
 # gcc. The screen and keys come from
 # tui.library, the terminal programs' shared toolkit (the CUtils repo,
-# Libs/tui): its tui.h keeps the tui_* names, libtuiglue.a opens the
+# AmigaLibs/tui): its tui.h keeps the tui_* names, libtuiglue.a opens the
 # library when Maki first needs a terminal. Maki needs LIBS:tui.library.
 #
 # -fbbb=-: bebbo's backend pass off - it miscompiled tui_flush in Sumi
@@ -13,7 +13,7 @@ AMIGA   ?= $(firstword $(wildcard /opt/amiga $(HOME)/opt/amiga))
 CC      = $(AMIGA)/bin/m68k-amigaos-gcc
 CFLAGS  = -Os -m68020 -noixemul -fomit-frame-pointer -fno-common -fbbb=- -Wall -Wno-pointer-sign
 LDFLAGS = -noixemul -s
-TUI     ?= ../../CUtils/Libs/tui
+TUI     ?= ../../AmigaLibs/tui
 CFLAGS += -I$(TUI)/include
 SRC     = src/main.c src/src.c src/keys.c src/drawer.c src/filecol.c
 OBJ     = $(patsubst src/%.c,build/%.o,$(SRC))
