@@ -960,6 +960,10 @@ void outline(void)
         tui_cursor(0, 0, 0);
         tui_flush();
         if (!tui_wait(&e, -1, 0, NULL)) continue;
+        if (e.type == TE_END) {               /* the terminal is gone: as Esc */
+            view_forget();
+            return;
+        }
         if (e.type == TE_RESIZE) {
             tui_resized();
             view_reset();

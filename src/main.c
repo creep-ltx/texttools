@@ -25,7 +25,7 @@
 #include "markdown.h"
 #include "md.h"
 
-static const char version[] = "$VER: Markdown 0.1b1 (14.10.2026) - Markdown viewer and editor";
+static const char version[] = "$VER: Markdown 0.1b2 (16.10.2026) - Markdown viewer and editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Markdown/Markdown.prefs"
@@ -697,6 +697,7 @@ int prompt(const char *q, char *buf, int max, int kind)
         tui_cursor(ql + 1 + pos - start, row, 1);
         tui_flush();
         if (!tui_wait(&e, -1, 0, NULL)) continue;
+        if (e.type == TE_END) return 0;       /* the terminal is gone: as Esc (the main loop rescues) */
         if (e.type == TE_RESIZE) {
             tui_resized();
             view_reset();
@@ -783,6 +784,7 @@ int ask(const char *q, const char *choices)
             view_reset();
             continue;
         }
+        if (e.type == TE_END) return 0;
         if (e.type != TE_KEY) continue;
         if (e.key == K_ESC || e.key == (TM_CTRL | 'c')) return 0;
         if (e.key < 128) {
@@ -2057,6 +2059,7 @@ static void help(void)
             if (e.mact == TB_WHEELUP) top = top > 3 ? top - 3 : 0;
             continue;
         }
+        if (e.type == TE_END) break;
         if (e.type != TE_KEY) continue;
         r = K_BASE(e.key);
         if (r == K_DOWN && top < total - 1) top++;
@@ -2066,6 +2069,22 @@ static void help(void)
         else if (r != K_DOWN && r != K_UP) break;
     }
     view_forget();
+}
+
+/* The terminal went away (CTerm closed the tab or quit): every changed file
+ * kept as NAME.save beside it (nano's way), T:Markdown-n.save for one never
+ * named, before it ends - nobody is there to be asked. */
+static void rescue(void)
+{
+    int i;
+    for (i = 0; i < ntabs; i++) {
+        Buf *b = tabs[i];
+        char p[PATHMAX + 8];
+        if (!b || !buf_dirty(b)) continue;
+        if (b->path[0] && strlen(b->path) < PATHMAX) { strcpy(p, b->path); strcat(p, ".save"); }
+        else { strcpy(p, "T:Markdown-"); p[11] = (char)('1' + i % 9); strcpy(p + 12, ".save"); }
+        file_save(b, p);
+    }
 }
 
 /* ---- the command line ----------------------------------------------------- */
@@ -2977,6 +2996,7 @@ static int smain(int argc, char **argv)
         switch (e.type) {
         case TE_KEY: key(e.key); break;
         case TE_MOUSE: mouse(&e); break;
+        case TE_END: rescue(); quitting = 1; break;
         case TE_PASTE: {
             /* a paste through the terminal: its characters as they came */
             int enc = ENC_LATIN1;

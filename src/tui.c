@@ -343,6 +343,8 @@ static UBYTE *pastebuf, *pastegive;  /* a paste being gathered; the one handed o
 static long pastelen, pastecap;
 static int inpaste;
 
+static int ended;               /* a read gave 0 after a "key waiting": the input is gone */
+
 static void push(int type, int key)
 {
     int n = (evt + 1) % EVQ;
@@ -644,7 +646,9 @@ static void readnow(void)
     int guard = 16;
     while (guard-- && WaitForChar(tin, 0)) {
         LONG n = Read(tin, ibuf + ilen, sizeof(ibuf) - ilen);
-        if (n <= 0) break;
+        /* "a key is there" and then nothing: the input ended (CTerm's tab
+         * closing gives that for ever) - asked again it would spin */
+        if (n <= 0) { ended = 1; break; }
         ilen += (int)n;
         parse(0);
         if (ilen >= (int)sizeof(ibuf) - 8) {    /* one long run (a paste): take it as it is */
@@ -708,6 +712,10 @@ int tui_wait(TuiEv *e, long us, ULONG extra, ULONG *got)
         if (evh != evt) {
             *e = evq[evh];
             evh = (evh + 1) % EVQ;
+            return 1;
+        }
+        if (ended) {                    /* every wait from now on: the end */
+            e->type = TE_END;
             return 1;
         }
         collect(0);
@@ -775,6 +783,7 @@ static void readreplies(int tries, int *flag)
         if (!WaitForChar(tin, 100000)) continue;
         {
             LONG n = Read(tin, ibuf + ilen, sizeof(ibuf) - ilen);
+            if (n <= 0) { ended = 1; return; }
             if (n > 0) ilen += (int)n;
             parse(0);
         }
@@ -906,8 +915,9 @@ void tui_keyafter(void)
     if (!topen) return;
     Write(tout, (APTR)m, sizeof(m) - 1);
     SetMode(tin, 1);
-    Read(tin, &c, 1);
-    while (WaitForChar(tin, 20000)) Read(tin, &c, 1);
+    if (Read(tin, &c, 1) <= 0) ended = 1;
+    while (!ended && WaitForChar(tin, 20000))       /* the rest of a key's sequence */
+        if (Read(tin, &c, 1) <= 0) ended = 1;
     Write(tout, "\r\x1b[K", 4);
     SetMode(tin, 0);
 }
