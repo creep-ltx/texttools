@@ -53,6 +53,7 @@ extern int md_maxpicrows;       /* the tallest a picture may be, in rows */
 
 void md_render(Doc *d, struct Buf *b, int width, const char *path);
 void md_free(Doc *d);
+void md_cleanup(void);                          /* free the work buffers kept between renders */
 const char *md_str(const Doc *d, long off);
 long md_rowof(const Doc *d, long srcline);       /* the first row of that line (or before) */
 int md_anchor(const Doc *d, const char *name);   /* the heading with that anchor, or -1 */

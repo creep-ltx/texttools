@@ -2400,6 +2400,28 @@ void md_free(Doc *d)
     d->rev = -1;
 }
 
+/* the work buffers md_render keeps between calls (grown, never shrunk),
+ * freed: for a program before it ends, for a library (markdown.datatype)
+ * before it is unloaded */
+void md_cleanup(void)
+{
+    if (refs) FreeVec(refs);
+    if (ic) FreeVec(ic);
+    if (pt) FreeVec(pt);
+    if (pls) FreeVec(pls);
+    if (wc) FreeVec(wc);
+    if (wl) FreeVec(wl);
+    if (hl) FreeVec(hl);
+    refs = NULL;
+    ic = wc = NULL;
+    pt = NULL;
+    pls = NULL;
+    wl = NULL;
+    hl = NULL;
+    crefs = cic = cpt = cpls = cwc = cwl = chl = 0;
+    nrefs = nic = npt = npls = nwc = nwl = 0;
+}
+
 void md_render(Doc *d, Buf *b, int width, const char *path)
 {
     SL *L;
