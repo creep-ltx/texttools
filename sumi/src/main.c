@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "sumi.h"
 
-static const char version[] = "$VER: Sumi 0.2b3 (16.10.2026) - text editor";
+static const char version[] = "$VER: Sumi 0.2b4 (16.10.2026) - text editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Sumi/Sumi.prefs"
@@ -2796,6 +2796,7 @@ static int smain(int argc, char **argv)
         return 20;
     }
     if (ntabs > 1) ct = 0;
+    tui_keymsg = " Sumi: a key goes back ";
     if (!tui_open()) {
         PutStr((STRPTR)"Sumi: cannot use this console\n");
         for (i = 0; i < ntabs; i++) buf_free(tabs[i]);
