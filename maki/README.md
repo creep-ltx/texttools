@@ -76,9 +76,10 @@ to line 120.
 ## Building
 
 `make` with bebbo's gcc in `~/opt/amiga` (`-fbbb=-`, as Sumi). AmigaOS
-3.x, 68020+. `src/tui.c` is the terminal programs' shared toolkit (from
-Sumi) plus `tui_console()`, which takes the keys from `*` when Input() is
-a pipe.
+3.x, 68020+. The screen and keys come from **tui.library**, the terminal
+programs' shared toolkit (`~/Projects/CUtils/Libs/tui`, built by `make` here
+when needed). Maki needs `LIBS:tui.library` 0.2 or newer; without it, it
+says so and quits.
 
 ## Known limits
 
