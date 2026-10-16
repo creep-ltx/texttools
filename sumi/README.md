@@ -132,7 +132,7 @@ each `(`, `@variables`, strings with their `\n` escapes, `;` comments.
 
 Made for CTerm (colours from its theme, the mouse, UTF-8, the modern key
 combinations). In a plain console window it works with the keyboard, in
-Workbench's colours. See `~/Projects/Ideas/terminal-programs.md` for the
+Workbench's colours. See the ideas notes (`terminal-programs.md`) for the
 family of programs that live inside the terminal; `src/tui.c` is the
 toolkit they share.
 
@@ -141,5 +141,5 @@ toolkit they share.
 `make` (Bebbo's gcc in `~/opt/amiga`). Built with `-fbbb=-`: the compiler's
 own backend pass miscompiled the toolkit's drawing (see the Makefile).
 Needs AmigaOS 3.x and `LIBS:tui.library` 0.2 or newer (the terminal programs' shared
-toolkit, `~/Projects/CUtils/Libs/tui`; `make` builds its part when needed); made for 3.2
+toolkit, `Libs/tui` in the CUtils repo; `make` builds its part when needed); made for 3.2
 with fast RAM.

@@ -53,7 +53,7 @@ columns, and shows the text itself (no HTML step). No Aminet package is called "
 | `src/mdedit.c` | writing helpers: Return in lists/quotes, bold and the format menu, `table`, `toc` |
 | `src/main.c` | Sumi's editor, with the view hooked in (drawall, key, action, mouse, help) |
 | `src/keys.c` | the keys file, two sets: `[edit]` and `[view]` (`keys_find(key, view)`) |
-| (tui.library) | the terminal toolkit, shared: `~/Projects/CUtils/Libs/tui` (was `src/tui.c` until 0.1b3; italic/strike/dim, `tui_dirty`, `tui_raw` went into the library) |
+| (tui.library) | the terminal toolkit, shared: `Libs/tui` in the CUtils repo (was `src/tui.c` until 0.1b3; italic/strike/dim, `tui_dirty`, `tui_raw` went into the library) |
 | others | Sumi's: buf.c (+ `rev`, a change counter), file.c, syntax.c, clip.c |
 
 ## How the renderer works (md.c)

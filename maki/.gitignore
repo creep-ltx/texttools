@@ -1,3 +1,4 @@
 build/
 Maki
 tests/files/
+src/compile_flags.txt
