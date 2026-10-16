@@ -1,3 +1,5 @@
+/* tui.h - the toolkit's old declarations, for tests/mdtest.c only (Markdown
+ * itself builds against tui.library's include/tui.h). */
 /* tui - the toolkit for programs that live inside the terminal: a CTerm
  * tab or pane, or any Amiga console window. No window or screen of
  * their own: a grid of cells drawn with escape sequences on Output(),
