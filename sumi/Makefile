@@ -13,7 +13,7 @@ AMIGA   = $(HOME)/opt/amiga
 CC      = $(AMIGA)/bin/m68k-amigaos-gcc
 CFLAGS  = -Os -m68020 -noixemul -fomit-frame-pointer -fno-common -fbbb=- -Wall -Wno-pointer-sign
 LDFLAGS = -noixemul -s
-TUI     = ../CUtils/Libs/tui
+TUI     = ../../CUtils/Libs/tui
 CFLAGS += -I$(TUI)/include
 SRC     = src/main.c src/buf.c src/file.c src/syntax.c src/clip.c src/keys.c
 OBJ     = $(patsubst src/%.c,build/%.o,$(SRC))
