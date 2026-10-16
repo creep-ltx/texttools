@@ -80,7 +80,9 @@ Sumi's settings, and `set split auto|side|under`. They are kept in `ENVARC:Markd
 
 ## Building
 
-`make` with bebbo's gcc in `~/opt/amiga` (`-fbbb=-`, as Sumi). 68020+.
+`make` with bebbo's gcc in `~/opt/amiga` (`-fbbb=-`, as Sumi). 68020+. Needs
+`LIBS:tui.library` 0.2 or newer, the terminal programs' shared toolkit
+(`~/Projects/CUtils/Libs/tui`; `make` builds its part when needed).
 `tests/run.sh` runs the renderer on the PC and as the Amiga build under
 vamos, and compares them.
 

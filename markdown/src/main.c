@@ -25,7 +25,7 @@
 #include "markdown.h"
 #include "md.h"
 
-static const char version[] = "$VER: Markdown 0.1b2 (16.10.2026) - Markdown viewer and editor";
+static const char version[] = "$VER: Markdown 0.1b3 (16.10.2026) - Markdown viewer and editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Markdown/Markdown.prefs"
@@ -2984,6 +2984,7 @@ static int smain(int argc, char **argv)
         return 20;
     }
     if (ntabs > 1) ct = 0;
+    tui_keymsg = " Markdown: a key goes back ";
     if (!tui_open()) {
         PutStr((STRPTR)"Markdown: cannot use this console\n");
         for (i = 0; i < ntabs; i++) buf_free(tabs[i]);

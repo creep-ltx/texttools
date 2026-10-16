@@ -10,9 +10,9 @@ T=$(cd "$(dirname "$0")" && pwd)
 N=${1:-300}
 W=$(mktemp -d)
 gcc -O1 -g -fsanitize=address,undefined -Wall -Wno-pointer-sign -Wno-unused \
-    -I"$T/fake" -I"$T/../src" -o "$W/pc" "$T/mdtest.c"
+    -I"$T/fake" -I"$T/stub" -I"$T/../src" -o "$W/pc" "$T/mdtest.c"
 "$HOME/opt/amiga/bin/m68k-amigaos-gcc" -Os -m68020 -noixemul -fomit-frame-pointer \
-    -fno-common -fbbb=- -w -I"$T/../src" -o "$W/am" "$T/mdtest.c"
+    -fno-common -fbbb=- -w -I"$T/stub" -I"$T/../src" -o "$W/am" "$T/mdtest.c"
 cp "$T/files/"* "$W/"
 cd "$W"
 bad=0
