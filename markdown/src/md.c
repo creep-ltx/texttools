@@ -42,7 +42,9 @@ int md_unicode = 1, md_cellw, md_cellh, md_pictures = 1, md_maxpicrows = 20;
 static const UBYTE hlcol[] = { TC_DEFAULT, 8, 2, 12, 6, 3, 5, 11 };
 
 #define MAXLEV  32
-#define MAXDEPTH 24
+#ifndef MAXDEPTH                /* containers inside containers: about 1 KB of stack each */
+#define MAXDEPTH 24             /* (markdown.datatype builds with 10, on a 16 KB stack) */
+#endif
 
 /* ---- the document being made -------------------------------------------- */
 
@@ -60,8 +62,8 @@ static int grow_(void **p, long *cap, long need, long size)
     long nc;
     void *n;
     if (need <= *cap) return 1;
-    nc = *cap ? *cap * 2 : 64;
-    while (nc < need) nc *= 2;
+    nc = *cap ? *cap + *cap / 4 + 16 : 64;  /* a quarter more: the old and the new copy must fit at once on a 1 MB Amiga */
+    if (nc < need) nc = need;
     if (!(n = AllocVec(nc * size, MEMF_ANY))) {
         D->failed = 1;
         return 0;
@@ -2422,10 +2424,31 @@ void md_cleanup(void)
     nrefs = nic = npt = npls = nwc = nwl = 0;
 }
 
+/* room for an array at once, if it can be had in one piece; if not, it
+ * grows as it goes (and only then can it fail) */
+static void reserve_(void **p, long *cap, long need, long size)
+{
+    void *n;
+    if (*p || *cap >= need) return;
+    if ((n = AllocVec(need * size, MEMF_ANY))) {
+        *p = n;
+        *cap = need;
+    }
+}
+#define RESERVE(arr, cap, need) reserve_((void **)&(arr), &(cap), (need), (long)sizeof(*(arr)))
+
 void md_render(Doc *d, Buf *b, int width, const char *path)
 {
+    md_render_range(d, b, 0, b->n, width, path);
+}
+
+/* Lines from..to-1 only, but the link definitions of the whole file, so
+ * a part can use one written in another (markdown.datatype shows a big
+ * file part by part, to fit a small Amiga). Cut only where a block ends. */
+void md_render_range(Doc *d, Buf *b, long from, long to, int width, const char *path)
+{
     SL *L;
-    long i, start = 0;
+    long i, start = from;
     D = d;
     SB = b;
     ENC = b->enc;
@@ -2452,6 +2475,15 @@ void md_render(Doc *d, Buf *b, int width, const char *path)
         return;
     }
     isdef = AllocVec(b->n + 1, MEMF_ANY | MEMF_CLEAR);
+    if (from < 0) from = start = 0;
+    if (to > b->n) to = b->n;
+    {   /* the cells and rows sized from the text at once: growing a big
+         * array step by step needs the old and the new copy at the same time */
+        long bytes = 0;
+        for (i = from; i < to; i++) bytes += b->l[i].len;
+        RESERVE(d->cells, d->ccells, bytes + bytes / 4 + 4 * (to - from) + 64);  /* tables pad their cells */
+        RESERVE(d->rows, d->crows, (to - from) + bytes / W + 16);
+    }
     for (i = 0; i < b->n; i++) {
         L[i].s = b->l[i].s;
         L[i].len = b->l[i].len;
@@ -2462,7 +2494,7 @@ void md_render(Doc *d, Buf *b, int width, const char *path)
     for (i = 0; i < b->n; i++)
         if (memchr(L[i].s, ']', L[i].len)) trydef(&L[i]);
     /* front matter (--- at the very top): shown as a quiet block */
-    if (b->n > 2 && L[0].len == 3 && !strncmp(L[0].s, "---", 3)) {
+    if (from == 0 && b->n > 2 && L[0].len == 3 && !strncmp(L[0].s, "---", 3)) {
         long e;
         for (e = 1; e < b->n && e < 200; e++)
             if ((L[e].len == 3 && (!strncmp(L[e].s, "---", 3) || !strncmp(L[e].s, "...", 3)))) break;
@@ -2476,7 +2508,8 @@ void md_render(Doc *d, Buf *b, int width, const char *path)
             gap = 1;
         }
     }
-    blocks(L + start, b->n - start, 0);
+    if (to > start)
+        blocks(L + start, to - start, 0);
     FreeVec(L);
     if (isdef) FreeVec(isdef);
     isdef = NULL;

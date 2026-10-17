@@ -52,6 +52,8 @@ extern int md_pictures;         /* show pictures (else a line saying which) */
 extern int md_maxpicrows;       /* the tallest a picture may be, in rows */
 
 void md_render(Doc *d, struct Buf *b, int width, const char *path);
+/* lines from..to-1 only (cut where a block ends), with the whole file's link definitions */
+void md_render_range(Doc *d, struct Buf *b, long from, long to, int width, const char *path);
 void md_free(Doc *d);
 void md_cleanup(void);                          /* free the work buffers kept between renders */
 const char *md_str(const Doc *d, long off);
