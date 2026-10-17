@@ -14,3 +14,10 @@ keys through tui.library, the shared toolkit, which lives in the AmigaLibs repo 
 
 Build: `make` inside a program's folder (Bebbo's m68k-amigaos-gcc), with the AmigaLibs repo beside this
 one (`../../AmigaLibs/tui` from a program's folder).
+
+markdown.datatype (the AmigaDatatypes repo) builds Markdown's `md.c` and `syntax.c` into itself, so it shows
+a file the same way as the viewer.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
