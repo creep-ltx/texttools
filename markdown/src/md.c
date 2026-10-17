@@ -596,6 +596,14 @@ static long newrow(long src, int isgap)
     return D->nrows++;
 }
 
+int (*md_width)(ULONG c);
+
+/* a wide character (two columns, md_width): it gets a second cell */
+static int iswide(ULONG c)
+{
+    return c >= 0x1100 && c != MD_TAIL && md_width && md_width(c) == 2;
+}
+
 /* a cell onto the last row */
 static void rowput(ULONG c, int fg, int bg, int at)
 {
@@ -603,6 +611,7 @@ static void rowput(ULONG c, int fg, int bg, int at)
     if (!GROW(D->cells, D->ncells, D->ccells, D->ncells + 1)) return;
     setcell(&D->cells[D->ncells++], c, fg, bg, at);
     D->rows[D->nrows - 1].len++;
+    if (iswide(c)) rowput(MD_TAIL, fg, bg, at);
 }
 
 static void rowspan(long row, int c0, int c1, int link)
@@ -657,6 +666,7 @@ static void icput(ULONG c, int fg, int at, int fl)
     p->fl = (UBYTE)fl;
     p->link = 0;
     p->sl = (UWORD)isl;
+    if (iswide(c)) icput(MD_TAIL, fg, at, fl);
 }
 
 static int curat(void)

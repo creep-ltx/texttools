@@ -457,6 +457,14 @@ ULONG buf_char(Buf *b, long line, long col, int *len)
     return c;
 }
 
+/* the screen columns a character takes: 2 for a wide one (Chinese,
+ * Japanese, emoji: tui.library 0.5's widths), else 1 (a lone accent shows
+ * as '?' in a cell of its own) */
+long buf_cw(ULONG c)
+{
+    return c >= 0x1100 && tui_charwidth(c) == 2 ? 2 : 1;
+}
+
 long buf_xof(Buf *b, long line, long col)
 {
     long x = 0, i = 0;
@@ -465,7 +473,7 @@ long buf_xof(Buf *b, long line, long col)
         int n;
         ULONG c = buf_char(b, line, i, &n);
         if (c == '\t') x = (x / tabsize + 1) * tabsize;
-        else x++;
+        else x += buf_cw(c);
         i += n;
     }
     return x;
@@ -478,7 +486,7 @@ long buf_colat(Buf *b, long line, long x)
     while (i < l->len) {
         int n;
         ULONG c = buf_char(b, line, i, &n);
-        long nx = c == '\t' ? (cx / tabsize + 1) * tabsize : cx + 1;
+        long nx = c == '\t' ? (cx / tabsize + 1) * tabsize : cx + buf_cw(c);
         if (nx > x) break;
         cx = nx;
         i += n;

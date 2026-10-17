@@ -26,6 +26,7 @@ void tui_title(const char *t) { (void)t; }
 int tui_wait(TuiEv *e, long us, ULONG x, ULONG *g) { (void)e; (void)us; (void)x; (void)g; return 0; }
 void tui_beep(void) {}
 ULONG tui_box(int w) { (void)w; return '+'; }
+long tui_charwidth(ULONG c) { return c >= 0x1100 && c < 0xA000 ? 2 : 1; }
 void keyname(int k, char *d, int s) { (void)k; (void)s; d[0] = 0; }
 int keys_all(int a, char *n, int m) { (void)a; (void)m; n[0] = 0; return 0; }
 int keys_find(int k) { (void)k; return 0; }

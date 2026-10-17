@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "sumi.h"
 
-static const char version[] = "$VER: Sumi 0.2b4 (16.10.2026) - text editor";
+static const char version[] = "$VER: Sumi 0.2b5 (17.10.2026) - text editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Sumi/Sumi.prefs"
@@ -324,7 +324,7 @@ static void drawline(Buf *b, long ln, int row, long xs, int first)
     while (i < l->len && x < xs + w) {
         int n, attr, fg, bg = TC_DEFAULT;
         ULONG c = buf_char(b, ln, i, &n), shown = c;
-        long nx = c == '\t' ? (x / tabsize + 1) * tabsize : x + 1;
+        long nx = c == '\t' ? (x / tabsize + 1) * tabsize : x + buf_cw(c);
         attr = insel(b, ln, i) ? TA_REV : 0;
         fg = hlbuf ? hlcol[hlbuf[i]] : TC_DEFAULT;
         if (nmk && marked(i)) {
@@ -339,6 +339,15 @@ static void drawline(Buf *b, long ln, int row, long xs, int first)
         if (showws && (c == '\t' || (c == ' ' && i >= trail))) {
             shown = c == '\t' ? 0xBB : 0xB7;    /* >> and the middle dot: Latin-1 has both */
             fg = C_DIM;
+        }
+        if (nx - x == 2 && c != '\t') {    /* a wide character: both cells, or a blank */
+            sx = (int)(x - xs);
+            if (sx >= 0 && sx + 1 < w) tui_putc(g + sx, row, shown, fg, bg, attr);
+            else {
+                if (sx >= 0 && sx < w) tui_putc(g + sx, row, ' ', fg, bg, attr);
+                if (sx + 1 >= 0 && sx + 1 < w) tui_putc(g + sx + 1, row, ' ', fg, bg, attr);
+            }
+            x = nx;
         }
         for (; x < nx; x++) {
             sx = (int)(x - xs);
@@ -2498,8 +2507,11 @@ static void dojustify(Buf *b)
                 if (i >= l->len) break;
                 s0 = i;
                 while (i < l->len && l->s[i] != ' ' && l->s[i] != '\t') i++;
-                for (k = s0; k < i; k++)        /* characters, not bytes */
-                    if (b->enc != ENC_UTF8 || (l->s[k] & 0xC0) != 0x80) wl++;
+                for (k = s0; k < i; ) {         /* columns, not bytes */
+                    int cn;
+                    wl += buf_cw(buf_char(b, ln, k, &cn));
+                    k += cn;
+                }
                 if (!firstword) {
                     if (col + 1 + wl > wrapcol) {
                         *o++ = '\n';

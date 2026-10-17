@@ -8,9 +8,16 @@
 #include <exec/types.h>
 
 typedef struct {
-    ULONG c;                    /* a code point */
+    ULONG c;                    /* a code point; MD_TAIL: a wide one's right half */
     UBYTE fg, bg, at, fl;       /* colours (TC_*), attributes (TA_*) */
 } RCell;
+
+/* The columns a character takes, set by a program that shows wide
+ * characters in two (Markdown: tui.library 0.5's widths). NULL: one each
+ * (the datatype). A wide character's second column is a cell MD_TAIL,
+ * which is not drawn and not copied. */
+extern int (*md_width)(ULONG c);
+#define MD_TAIL 0x00FFFFFEUL
 
 typedef struct {
     long cell;                  /* its first cell in cells[] */

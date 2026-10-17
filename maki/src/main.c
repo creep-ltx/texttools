@@ -20,8 +20,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include "maki.h"
+#ifndef MAKI_PC
+#include <proto/utf8.h>
+#endif
 
-static const char version[] = "$VER: Maki 0.1b4 (16.10.2026) - pager";
+static const char version[] = "$VER: Maki 0.1b5 (17.10.2026) - pager";
 
 typedef struct {
     Src *s;
@@ -42,7 +45,9 @@ static int msgerr;
 static char findtext[128];
 static int findback, showfound;
 
-/* a line as cells: what render() made of its bytes */
+/* a line as cells: what render() made of its bytes; TAILC is the right
+ * half of a wide character */
+#define TAILC 0
 typedef struct {
     ULONG c;
     UBYTE fg, bg, at, hl;
@@ -119,10 +124,52 @@ static ULONG plain(ULONG u)
     return '?';
 }
 
+#ifndef MAKI_PC
+/* utf8.library, opened when the first accent written apart comes (load
+ * on demand); without it such accents are left out */
+struct Library *Utf8Base;
+static int u8tried;
+
+/* an accent that joins the letter before (e + acute, as Macs write): put
+ * on it */
+static void accent(ULONG u)
+{
+    LCell *p = &lc[lcn - 1];
+    char in[12], out[12];
+    ULONG c;
+    int n;
+    if (p->c == TAILC) return;
+    if (!u8tried) {
+        u8tried = 1;
+        Utf8Base = OpenLibrary("utf8.library", 0);
+    }
+    if (!Utf8Base) return;
+    n = Utf8Encode(p->c, in);
+    n += Utf8Encode(u, in + n);
+    Utf8Normalize(in, n, out, sizeof(out), U8F_COMPOSE);
+    if (Utf8Decode(out, -1, &c) == (LONG)strlen(out)) {   /* one letter now */
+        p->c = plain(c);
+        lp[lcn - 1] = (UBYTE)(c < 0x100 ? c : 0x1A);
+    }
+}
+
+void maki_closeutf8(void)
+{
+    if (Utf8Base) CloseLibrary(Utf8Base);
+    Utf8Base = NULL;
+}
+#else
+static void accent(ULONG u) { (void)u; }
+#endif
+
 static void put(ULONG u, UWORD st, int at)
 {
     LCell *p;
     if (lcn >= MAXC) return;
+    if (u >= 0x300 && lcn > 0 && tui_charwidth(u) == 0) {
+        accent(u);
+        return;
+    }
     p = &lc[lcn];
     p->c = plain(u);
     p->fg = (UBYTE)ST_FG(st);
@@ -130,6 +177,13 @@ static void put(ULONG u, UWORD st, int at)
     p->at = (UBYTE)(ST_AT(st) | at);
     p->hl = 0;
     lp[lcn++] = (UBYTE)(u < 0x100 ? u : 0x1A);
+    /* a wide character (Chinese, Japanese, emoji) takes two columns: a
+     * second cell that draw() leaves to tui.library (0.5) */
+    if (u >= 0x1100 && lcn < MAXC && tui_charwidth(u) == 2) {
+        lc[lcn] = *p;
+        lc[lcn].c = TAILC;
+        lp[lcn++] = 0x1A;
+    }
 }
 
 static long render(Src *s, long i)
@@ -231,6 +285,7 @@ static long render(Src *s, long i)
         if (back && lcn > 0) {
             LCell *p = &lc[lcn - 1];
             back = 0;
+            if (p->c == TAILC && lcn > 1) p--;  /* a wide one: its left half */
             if (p->c == plain(u)) p->at |= TA_BOLD;
             else if (p->c == '_') {
                 p->c = plain(u);
@@ -676,6 +731,7 @@ static void draw(void)
             start = chop ? v->left : seg * w;
             for (x = 0; x < w && start + x < lcn; x++) {
                 LCell *p = &lc[start + x];
+                if (p->c == TAILC) continue;        /* drawn with its left half */
                 tui_putc(g + x, r, p->c, p->fg, p->bg, p->hl ? p->at ^ TA_REV : p->at);
             }
             if (chop && lcn > start + w) tui_putc(tui_cols - 1, r, '>', C_DIM, TC_DEFAULT, TA_REV);
@@ -1330,6 +1386,9 @@ static int smain(int argc, char **argv)
         }
     }
     tui_close();
+#ifndef MAKI_PC
+    maki_closeutf8();
+#endif
     closehelp();
     for (i = 0; i < nfiles; i++) src_free(files[i].s);
     if (conin) Close(conin);

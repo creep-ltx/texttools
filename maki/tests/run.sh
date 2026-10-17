@@ -6,7 +6,7 @@ set -e
 T=$(cd "$(dirname "$0")" && pwd)
 D=${1:-$T/files}
 [ -f "$D/big.txt" ] || python3 "$T/mkfiles.py" "$D"
-gcc -O1 -g -fsanitize=address,undefined -Wall -Wno-pointer-sign -Wno-unused \
+gcc -DMAKI_PC -O1 -g -fsanitize=address,undefined -Wall -Wno-pointer-sign -Wno-unused \
     -Wno-pointer-to-int-cast -I"$T/fake" -o /tmp/maki-harness "$T/harness.c" "$T/../src/src.c"
 check() {   # FILE PATTERN EXPECTED-MATCH-LINE (0: none) [back]
   out=$(timeout 10 /tmp/maki-harness "$D/$1" "$2" $4) || { echo "FAIL $1 '$2': hung or crashed"; bad=1; return; }

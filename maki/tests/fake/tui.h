@@ -84,6 +84,7 @@ void tui_beep(void);
 /* the line-drawing characters: CTerm draws them itself in any font; a
  * plain console gets ASCII */
 ULONG tui_box(int which);
+long tui_charwidth(ULONG c);    /* cells a character takes (0.5): 2 wide */
 enum { BX_H, BX_V, BX_TL, BX_TR, BX_BL, BX_BR, BX_ARROW, BX_DOT };
 
 #endif

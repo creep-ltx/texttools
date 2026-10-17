@@ -70,6 +70,7 @@ int buf_redo(Buf *b);
 long buf_next(Buf *b, long line, long col);              /* one character on (bytes) */
 long buf_prev(Buf *b, long line, long col);
 ULONG buf_char(Buf *b, long line, long col, int *len);   /* the code point there */
+long buf_cw(ULONG c);                                   /* screen columns: 2 wide, else 1 */
 long buf_xof(Buf *b, long line, long col);               /* the screen column of a byte */
 long buf_colat(Buf *b, long line, long x);               /* the byte at a screen column */
 int pos_cmp(Pos a, Pos b);

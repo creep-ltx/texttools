@@ -327,6 +327,7 @@ void view_draw(Buf *b, int x0, int w, int y0, int h, int full)
             int k, room = w - aoff;
             for (k = 0; k < rw->len && k < room; k++) {
                 int fg = c[k].fg, bg = c[k].bg, at = c[k].at;
+                if (c[k].c == MD_TAIL) continue;    /* drawn with its left half */
                 if (chosen(b, row, k)) at ^= TA_REV;
                 if (row == fsrow && k >= fscol && k < fscol + fslen) {
                     fg = 0;
