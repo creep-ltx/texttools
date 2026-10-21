@@ -25,7 +25,7 @@
 #include "markdown.h"
 #include "md.h"
 
-static const char version[] = "$VER: Markdown 0.1b4 (17.10.2026) - Markdown viewer and editor";
+static const char version[] = "$VER: Markdown 0.1b5 (22.10.2026) - Markdown viewer and editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Markdown/Markdown.prefs"

@@ -24,7 +24,7 @@
 #include <proto/utf8.h>
 #endif
 
-static const char version[] = "$VER: Maki 0.1b5 (17.10.2026) - pager";
+static const char version[] = "$VER: Maki 0.1b6 (22.10.2026) - pager";
 
 typedef struct {
     Src *s;

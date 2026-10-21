@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include "sumi.h"
 
-static const char version[] = "$VER: Sumi 0.2b5 (17.10.2026) - text editor";
+static const char version[] = "$VER: Sumi 0.2b6 (22.10.2026) - text editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Sumi/Sumi.prefs"

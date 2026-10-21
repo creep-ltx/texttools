@@ -11,7 +11,7 @@
 # looked for in the usual places (/opt/amiga, its own default, then ~/opt/amiga).
 AMIGA   ?= $(firstword $(wildcard /opt/amiga $(HOME)/opt/amiga))
 CC      = $(AMIGA)/bin/m68k-amigaos-gcc
-CFLAGS  = -Os -m68020 -noixemul -fomit-frame-pointer -fno-common -fbbb=- -Wall -Wno-pointer-sign
+CFLAGS  = -Os -m68000 -noixemul -fomit-frame-pointer -fno-common -fbbb=- -Wall -Wno-pointer-sign
 LDFLAGS = -noixemul -s
 TUI     ?= ../../AmigaLibs/tui
 CFLAGS += -I$(TUI)/include -I$(TUI)/../utf8/include
