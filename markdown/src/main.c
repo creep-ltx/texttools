@@ -25,7 +25,7 @@
 #include "markdown.h"
 #include "md.h"
 
-static const char version[] = "$VER: Markdown 0.1b5 (22.10.2026) - Markdown viewer and editor";
+static const char version[] = "$VER: Markdown 0.1b6 (30.10.2026) - Markdown viewer and editor";
 
 #define MAXTABS 24
 #define PREFS   "ENVARC:Markdown/Markdown.prefs"
@@ -674,18 +674,40 @@ static int nocase(const char *a, const char *b, long n)
 /* buf edited in place; 1 Return, 0 Esc. file: Tab completes names */
 /* the questions' kinds (markdown.h), each with its own history (Up/Down) */
 #define PHIST 12
-static char phist[P_KINDS][PHIST][PATHMAX];
+static char *phist[P_KINDS][PHIST];     /* each as long as it is (0.1b6; 15 KB before) */
 static int phn[P_KINDS];
+
+/* a copy of t in memory of its own, at most PATHMAX - 1 long (NULL: none) */
+static char *strsave(const char *t)
+{
+    int n = (int)strlen(t);
+    char *c;
+    if (n > PATHMAX - 1) n = PATHMAX - 1;
+    if ((c = AllocVec(n + 1, MEMF_ANY)) != NULL) {
+        memcpy(c, t, n);
+        c[n] = 0;
+    }
+    return c;
+}
 
 static void phist_add(int kind, const char *t)
 {
+    char *c;
     if (!t[0] || (phn[kind] && !strcmp(phist[kind][phn[kind] - 1], t))) return;
+    if (!(c = strsave(t))) return;
     if (phn[kind] == PHIST) {
-        memmove(phist[kind][0], phist[kind][1], (PHIST - 1) * PATHMAX);
+        FreeVec(phist[kind][0]);
+        memmove(&phist[kind][0], &phist[kind][1], (PHIST - 1) * sizeof(char *));
         phn[kind]--;
     }
-    strncpy(phist[kind][phn[kind]], t, PATHMAX - 1);
-    phist[kind][phn[kind]++][PATHMAX - 1] = 0;
+    phist[kind][phn[kind]++] = c;
+}
+
+static void phist_free(void)
+{
+    int k, i;
+    for (k = 0; k < P_KINDS; k++)
+        for (i = 0; i < phn[k]; i++) FreeVec(phist[k][i]);
 }
 
 int prompt(const char *q, char *buf, int max, int kind)
@@ -1693,15 +1715,32 @@ static void dogoto(Buf *b)
 
 #define PLACES "ENVARC:Markdown/Markdown.places"
 #define MAXPLACES 100
-static struct { long line, col; char path[PATHMAX]; } *places;
+/* the newest first; each as long as its name (0.1b6: a table of 26 KB
+ * before, made whole at the first file) */
+typedef struct { long line, col; char path[1]; } Place;
+static Place **places;                  /* MAXPLACES of them at most */
 static int nplaces, placesread;
+
+static Place *place_new(long line, long col, const char *path)
+{
+    int n = (int)strlen(path);
+    Place *p;
+    if (n > PATHMAX - 1) n = PATHMAX - 1;
+    if ((p = AllocVec(sizeof(Place) + n, MEMF_ANY)) != NULL) {
+        p->line = line;
+        p->col = col;
+        memcpy(p->path, path, n);
+        p->path[n] = 0;
+    }
+    return p;
+}
 
 static void places_read(void)
 {
     BPTR fh;
     char l[PATHMAX + 30];
     placesread = 1;
-    if (!places && !(places = AllocVec(MAXPLACES * sizeof(*places), MEMF_ANY | MEMF_CLEAR))) return;
+    if (!places && !(places = AllocVec(MAXPLACES * sizeof(*places), MEMF_ANY))) return;
     if (!(fh = Open((STRPTR)PLACES, MODE_OLDFILE))) return;
     while (nplaces < MAXPLACES && FGets(fh, (STRPTR)l, sizeof(l))) {
         char *p = l, *e;
@@ -1713,9 +1752,7 @@ static void places_read(void)
         p = e + 1;
         e = p + strlen(p);
         while (e > p && (e[-1] == '\n' || e[-1] == '\r')) *--e = 0;
-        places[nplaces].line = ln;
-        places[nplaces].col = co;
-        strncpy(places[nplaces].path, p, PATHMAX - 1);
+        if (!(places[nplaces] = place_new(ln, co, p))) break;
         nplaces++;
     }
     Close(fh);
@@ -1724,19 +1761,19 @@ static void places_read(void)
 static void places_note(Buf *b)
 {
     int i;
+    Place *p;
     if (!b->path[0]) return;
     if (!placesread) places_read();
     if (!places) return;
-    for (i = 0; i < nplaces && nocase(places[i].path, b->path, -1); i++) ;
+    for (i = 0; i < nplaces && nocase(places[i]->path, b->path, -1); i++) ;
+    if (!(p = place_new(b->cur.line, b->cur.col, b->path))) return;
     if (i == nplaces) {
         if (nplaces == MAXPLACES) i = nplaces - 1;
-        else nplaces++;
+        else places[nplaces++] = NULL;
     }
+    if (places[i]) FreeVec(places[i]);
     memmove(&places[1], &places[0], i * sizeof(*places));   /* the newest first */
-    places[0].line = b->cur.line;
-    places[0].col = b->cur.col;
-    strncpy(places[0].path, b->path, PATHMAX - 1);
-    places[0].path[PATHMAX - 1] = 0;
+    places[0] = p;
 }
 
 static void places_save(void)
@@ -1752,19 +1789,29 @@ static void places_save(void)
         long v;
         int k;
         t[0] = 0;
-        v = places[i].line; k = 23; n[23] = 0;
+        v = places[i]->line; k = 23; n[23] = 0;
         do n[--k] = (char)('0' + v % 10); while ((v /= 10) && k);
         strcat(t, n + k);
         strcat(t, " ");
-        v = places[i].col; k = 23;
+        v = places[i]->col; k = 23;
         do n[--k] = (char)('0' + v % 10); while ((v /= 10) && k);
         strcat(t, n + k);
         strcat(t, " ");
-        strcat(t, places[i].path);
+        strcat(t, places[i]->path);
         strcat(t, "\n");
         Write(fh, t, (LONG)strlen(t));
     }
     Close(fh);
+}
+
+static void places_free(void)
+{
+    int i;
+    if (!places) return;
+    for (i = 0; i < nplaces; i++) FreeVec(places[i]);
+    FreeVec(places);
+    places = NULL;
+    nplaces = 0;
 }
 
 static int places_recall(Buf *b)
@@ -1772,9 +1819,9 @@ static int places_recall(Buf *b)
     int i;
     if (!placesread) places_read();
     for (i = 0; places && i < nplaces; i++)
-        if (!nocase(places[i].path, b->path, -1)) {
-            b->cur.line = places[i].line < b->n ? places[i].line : b->n - 1;
-            b->cur.col = places[i].col <= b->l[b->cur.line].len ? places[i].col : 0;
+        if (!nocase(places[i]->path, b->path, -1)) {
+            b->cur.line = places[i]->line < b->n ? places[i]->line : b->n - 1;
+            b->cur.col = places[i]->col <= b->l[b->cur.line].len ? places[i]->col : 0;
             b->top = b->cur.line > edrows() / 2 ? b->cur.line - edrows() / 2 : 0;
             return 1;
         }
@@ -3029,10 +3076,13 @@ static int smain(int argc, char **argv)
     tui_close();
     for (i = 0; i < ntabs; i++) places_note(tabs[i]);
     places_save();
+    places_free();
+    phist_free();
     for (i = 0; i < ntabs; i++) {
         view_close(tabs[i]);
         buf_free(tabs[i]);
     }
+    md_cleanup();                       /* the renderer's work buffers (13 KB were left behind) */
     if (cutacc) FreeVec(cutacc);
     if (hlbuf) FreeVec(hlbuf);
     clip_exit();

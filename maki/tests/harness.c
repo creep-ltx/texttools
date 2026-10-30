@@ -40,9 +40,8 @@ int main(int argc, char **argv)
     clock_t t0;
     if (argc < 3) return 2;
     src_init();
-    lb = AllocVec(MAXLB + MAXC, 0);
-    lc = AllocVec(MAXC * sizeof(LCell), 0);
-    lp = lb + MAXLB;
+    lbroom(1);
+    lcroom(1);
     files[0].s = src_file(argv[1], err);
     if (!files[0].s) { printf("cannot open%s\n", err); return 1; }
     files[0].mline = -1;

@@ -21,6 +21,11 @@ that tab or pane. It replaces More:
 - **Big files**: never read whole. The lines are indexed only as far as
   they are needed, and further while you read, so a 10 MB file opens
   as fast as a small one.
+- **Small** (0.1b7): a file open took 780 KB with its Shell window, now
+  280 KB (FS-UAE, 77 x 30, with tui.library 0.5b3):
+  its buffers grow to what the longest line shown needs (at most 32 KB of
+  a line), and the file is read through up to eight 16 KB pieces, made
+  when needed.
 - **Follow** (`F`): the end of a growing file or pipe, as `tail -f`.
 - **Characters**: Latin-1, UTF-8 or the PC's CP437 (.ans .nfo .diz),
   guessed by looking. `F7` changes it.

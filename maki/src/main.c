@@ -24,7 +24,7 @@
 #include <proto/utf8.h>
 #endif
 
-static const char version[] = "$VER: Maki 0.1b6 (22.10.2026) - pager";
+static const char version[] = "$VER: Maki 0.1b7 (30.10.2026) - pager";
 
 typedef struct {
     Src *s;
@@ -52,11 +52,12 @@ typedef struct {
     ULONG c;
     UBYTE fg, bg, at, hl;
 } LCell;
-#define MAXLB 32768
-#define MAXC  40000
+#define MAXLB 32768             /* the most of a line looked at */
+#define MAXC  40000             /* the most cells a line makes */
 static UBYTE *lb, *lp;          /* the line's bytes; the cells as Latin-1 (for searching) */
 static LCell *lc;
 static long lcn;
+static long lbcap, lccap;       /* what they hold: grown when a line needs more (0.1b7) */
 static Src *rsrc;               /* what lc holds now */
 static long rline = -1, rend, rsize;
 static int renc;
@@ -162,15 +163,60 @@ void maki_closeutf8(void)
 static void accent(ULONG u) { (void)u; }
 #endif
 
+/* lb room for n bytes (n <= MAXLB) */
+static int lbroom(long n)
+{
+    long c = lbcap ? lbcap : 1024;
+    UBYTE *b;
+    if (n <= lbcap) return 1;
+    while (c < n) c *= 2;
+    if (c > MAXLB) c = MAXLB;
+    if (!(b = AllocVec(c, MEMF_ANY))) return 0;
+    if (lb) FreeVec(lb);                /* (nothing in it is kept) */
+    lb = b;
+    lbcap = c;
+    return 1;
+}
+
+/* lc and lp room for n cells (at most MAXC), the ones made kept */
+static int lcroom(long n)
+{
+    long c = lccap ? lccap : 256;
+    LCell *nc;
+    UBYTE *np;
+    if (n <= lccap) return 1;
+    if (n > MAXC) return 0;
+    while (c < n) c *= 2;
+    if (c > MAXC) c = MAXC;
+    nc = AllocVec(c * sizeof(LCell), MEMF_ANY);
+    np = AllocVec(c, MEMF_ANY);
+    if (!nc || !np) {
+        if (nc) FreeVec(nc);
+        if (np) FreeVec(np);
+        return 0;
+    }
+    if (lc) {
+        memcpy(nc, lc, lcn * sizeof(LCell));
+        memcpy(np, lp, lcn);
+        FreeVec(lc);
+        FreeVec(lp);
+    }
+    lc = nc;
+    lp = np;
+    lccap = c;
+    return 1;
+}
+
 static void put(ULONG u, UWORD st, int at)
 {
     LCell *p;
-    if (lcn >= MAXC) return;
+    long j;
+    if (lcn >= lccap && !lcroom(lcn + 1)) return;
     if (u >= 0x300 && lcn > 0 && tui_charwidth(u) == 0) {
         accent(u);
         return;
     }
-    p = &lc[lcn];
+    p = &lc[j = lcn];
     p->c = plain(u);
     p->fg = (UBYTE)ST_FG(st);
     p->bg = (UBYTE)ST_BG(st);
@@ -179,8 +225,8 @@ static void put(ULONG u, UWORD st, int at)
     lp[lcn++] = (UBYTE)(u < 0x100 ? u : 0x1A);
     /* a wide character (Chinese, Japanese, emoji) takes two columns: a
      * second cell that draw() leaves to tui.library (0.5) */
-    if (u >= 0x1100 && lcn < MAXC && tui_charwidth(u) == 2) {
-        lc[lcn] = *p;
+    if (u >= 0x1100 && (lcn < lccap || lcroom(lcn + 1)) && tui_charwidth(u) == 2) {
+        lc[lcn] = lc[j];                /* (lc may have moved) */
         lc[lcn].c = TAILC;
         lp[lcn++] = 0x1A;
     }
@@ -207,13 +253,14 @@ static long render(Src *s, long i)
     rsize = s->size;
     n = z - a;
     if (n > MAXLB) n = MAXLB;
+    if (!lbroom(n)) n = lbcap;
     n = src_get(s, a, lb, n);
     if (n > 0 && lb[n - 1] == '\n') n--;
     if (n > 0 && lb[n - 1] == '\r') n--;
     st = s->ls[i];
     lcn = 0;
     pv[0] = 0;
-    for (k = 0; k < n && lcn < MAXC - 8;) {
+    for (k = 0; k < n && lcn < MAXC - 8 && lcroom(lcn + 8);) {   /* room for a tab */
         int c = lb[k++];
         ULONG u = c;
         if (esc) {
@@ -513,6 +560,7 @@ static int maymatch(Src *s, long i)
     a = s->lo[i];
     n = src_lineend(s, i) - a;
     if (n > MAXLB) n = MAXLB;
+    if (!lbroom(n)) n = lbcap;
     n = src_get(s, a, lb, n);
     rsrc = NULL;                        /* lb is render()'s too */
     for (k = 0; k < n; k++) {
@@ -1415,15 +1463,11 @@ int main(int argc, char **argv)
     int r;
     if (argc == 0) return 20;           /* from Workbench: no terminal */
     if (!src_init()) return 20;
-    lb = AllocVec(MAXLB + MAXC, MEMF_ANY);
-    lc = AllocVec(MAXC * sizeof(LCell), MEMF_ANY);
-    if (!lb || !lc) {
+    if (!lbroom(1) || !lcroom(1)) {     /* the first 1 KB and 256 cells */
         if (lb) FreeVec(lb);
-        if (lc) FreeVec(lc);
         src_exit();
         return 20;
     }
-    lp = lb + MAXLB;
     if (have >= STACKSZ || !(bigstk = AllocVec(STACKSZ, MEMF_ANY)))
         r = smain(argc, argv);
     else {
@@ -1440,6 +1484,7 @@ int main(int argc, char **argv)
     }
     FreeVec(lb);
     FreeVec(lc);
+    FreeVec(lp);
     src_exit();
     return r;
 }

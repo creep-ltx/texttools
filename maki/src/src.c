@@ -26,21 +26,25 @@ static struct {
     UBYTE *d;
 } cache[NC];
 static ULONG usectr;
-static UBYTE *cmem, *sbuf;
+static UBYTE *sbuf;
 
+/* the cache's slots are made when first needed (0.1b7: all eight, 128 KB,
+ * at the start before): a small file takes one, a pipe none */
 int src_init(void)
 {
-    int i;
-    if (!(cmem = AllocVec(NC * CB + 4096, MEMF_ANY))) return 0;
-    for (i = 0; i < NC; i++) cache[i].d = cmem + i * CB;
-    sbuf = cmem + NC * CB;
-    return 1;
+    return (sbuf = AllocVec(4096, MEMF_ANY)) != NULL;
 }
 
 void src_exit(void)
 {
-    if (cmem) FreeVec(cmem);
-    cmem = NULL;
+    int i;
+    for (i = 0; i < NC; i++) {
+        if (cache[i].d) FreeVec(cache[i].d);
+        cache[i].d = NULL;
+        cache[i].s = NULL;
+    }
+    if (sbuf) FreeVec(sbuf);
+    sbuf = NULL;
 }
 
 static void uncache(Src *s)
@@ -382,14 +386,18 @@ long src_get(Src *s, long off, UBYTE *d, long n)
         for (i = 0; i < NC; i++)
             if (cache[i].s == s && cache[i].off == at) break;
         if (i == NC) {
-            for (i = 0; i < NC; i++) {
-                if (!cache[i].s) {
-                    best = i;
-                    break;
-                }
-                if (cache[i].use < cache[best].use) best = i;
+            /* a free slot that has memory, else a new one, else the one
+             * used longest ago */
+            for (i = 0; i < NC && (cache[i].s || !cache[i].d); i++) ;
+            if (i == NC)
+                for (i = 0; i < NC && cache[i].d; i++) ;
+            if (i < NC && !cache[i].d && !(cache[i].d = AllocVec(CB, MEMF_ANY))) i = NC;
+            if (i == NC) {
+                for (i = 0; i < NC; i++)
+                    if (cache[i].d && (!cache[best].d || cache[i].use < cache[best].use)) best = i;
+                if (!cache[best].d) break;      /* no memory at all */
+                i = best;
             }
-            i = best;
             cache[i].s = s;
             cache[i].off = at;
             Seek(s->fh, at, OFFSET_BEGINNING);
